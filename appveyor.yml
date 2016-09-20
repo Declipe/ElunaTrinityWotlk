@@ -12,4 +12,7 @@ build_script:
 - cd build
 - cmake -G"Visual Studio 14 Win64" -DSCRIPTS=False -DTOOLS=True ..
 - msbuild /p:Configuration=Debug /p:DebugSymbols=false /p:Platform="X64" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" TrinityCore.sln
+artifacts:
+- path: build\bin\RelWithDebInfo\TrinityCoreWin64VS2015.zip
+  name: TrinityCoreWin64VS2015.zip
 
