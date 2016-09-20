@@ -1,10 +1,10 @@
 version: 1.0.{build}
 branches:
   only:
-  - CLI
+  - appveyor
 clone_depth: 1
 environment:
-  BOOST_ROOT: C:\Libraries\boost_1_59_0
+  BOOST_ROOT: C:\Libraries\boost_1_58_0
 install:
 - ps: >-
     Start-FileDownload 'http://slproweb.com/download/Win64OpenSSL-1_0_2d.exe'
@@ -13,14 +13,6 @@ install:
 build_script:
 - md build
 - cd build
-- cmake -G"Visual Studio 14 Win64" -DSCRIPTS=static -DTOOLS=True ..
-- msbuild /p:Configuration=RelWithDebInfo /p:Platform="X64" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" "src\cli\cli.vcxproj"
-- cd "bin\RelWithDebInfo"
-- nuget spec TrinityCore
-- nuget pack -Version 1.0.0 -Verbosity quiet TrinityCore.nuspec
-- appveyor PushArtifact TrinityCore.1.0.0.nupkg
-artifacts:
-- path: build\bin\RelWithDebInfo\cli.dll
-  name: cli.dll
-- path: build\bin\RelWithDebInfo\cli.pdb
-  name: cli.pdb
+- cmake -G"Visual Studio 14 Win64" -DSCRIPTS=False -DTOOLS=True ..
+- msbuild /p:Configuration=Debug /p:DebugSymbols=false /p:Platform="X64" /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" TrinityCore.sln
+
