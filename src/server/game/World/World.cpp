@@ -27,6 +27,7 @@
 #include "AuctionHouseMgr.h"
 #include "BattlefieldMgr.h"
 #include "BattlegroundMgr.h"
+#include "AnticheatMgr.h"
 #include "CalendarMgr.h"
 #include "Channel.h"
 #include "CharacterDatabaseCleaner.h"
@@ -463,6 +464,15 @@ void World::LoadConfigSettings(bool reload)
     rate_values[RATE_XP_BG_KILL]  = sConfigMgr->GetFloatDefault("Rate.XP.BattlegroundKill", 1.0f);
     rate_values[RATE_XP_QUEST]    = sConfigMgr->GetFloatDefault("Rate.XP.Quest", 1.0f);
     rate_values[RATE_XP_EXPLORE]  = sConfigMgr->GetFloatDefault("Rate.XP.Explore", 1.0f);
+
+    rate_values[RATE_XP_KILL_PREMIUM]    = sConfigMgr->GetFloatDefault("Rate.XP.Kill.Premium", 1.0f);
+    rate_values[RATE_XP_QUEST_PREMIUM]   = sConfigMgr->GetFloatDefault("Rate.XP.Quest.Premium", 1.0f);
+    rate_values[RATE_XP_EXPLORE_PREMIUM] = sConfigMgr->GetFloatDefault("Rate.XP.Explore.Premium", 1.0f);
+    rate_values[RATE_REPUTATION_PREMIUM] = sConfigMgr->GetFloatDefault("Rate.Reputation.Premium", 1.0f);
+    rate_values[RATE_HONOR_PREMIUM]      = sConfigMgr->GetFloatDefault("Rate.Honor.Premium", 1.0f);
+	m_bool_configs[COMMAND_BANK_PREMIUM] = sConfigMgr->GetBoolDefault("Command.Bank.Premium", false);
+	m_bool_configs[COMMAND_MAIL_PREMIUM] = sConfigMgr->GetBoolDefault("Command.Mail.Premium", false);
+
     rate_values[RATE_REPAIRCOST]  = sConfigMgr->GetFloatDefault("Rate.RepairCost", 1.0f);
     if (rate_values[RATE_REPAIRCOST] < 0.0f)
     {
@@ -1098,7 +1108,17 @@ void World::LoadConfigSettings(bool reload)
     m_float_configs[CONFIG_ARENA_LOSE_RATING_MODIFIER]               = sConfigMgr->GetFloatDefault("Arena.ArenaLoseRatingModifier", 24.0f);
     m_float_configs[CONFIG_ARENA_MATCHMAKER_RATING_MODIFIER]         = sConfigMgr->GetFloatDefault("Arena.ArenaMatchmakerRatingModifier", 24.0f);
 
+    m_bool_configs[CONFIG_ARENA_1V1_ENABLE]                             = sConfigMgr->GetBoolDefault("Arena.1v1.Enable", true);
+    m_bool_configs[CONFIG_ARENA_1V1_ANNOUNCER]                         = sConfigMgr->GetBoolDefault("Arena.1v1.Announcer", false);
+    m_int_configs[CONFIG_ARENA_1V1_MIN_LEVEL]                         = sConfigMgr->GetIntDefault("Arena.1v1.MinLevel", 80);
+    m_int_configs[CONFIG_ARENA_1V1_COSTS]                             = sConfigMgr->GetIntDefault("Arena.1v1.Costs", 400000);
+    m_bool_configs[CONFIG_ARENA_1V1_VENDOR_RATING]                     = sConfigMgr->GetBoolDefault("Arena.1v1.VendorRating", false);
+    m_float_configs[CONFIG_ARENA_1V1_ARENAPOINTS_MULTI]                 = sConfigMgr->GetFloatDefault("Arena.1v1.ArenaPointsMulti", 0.64f);
+    m_bool_configs[CONFIG_ARENA_1V1_BLOCK_FORBIDDEN_TALENTS]         = sConfigMgr->GetBoolDefault("Arena.1v1.BlockForbiddenTalents", true);
+
     m_bool_configs[CONFIG_OFFHAND_CHECK_AT_SPELL_UNLEARN]            = sConfigMgr->GetBoolDefault("OffhandCheckAtSpellUnlearn", true);
+
+    m_bool_configs[CROSSFACTION_SYSTEM_BATTLEGROUNDS] = sConfigMgr->GetBoolDefault("CrossFactionSystem.Battlegrounds", true);
 
     m_int_configs[CONFIG_CREATURE_PICKPOCKET_REFILL] = sConfigMgr->GetIntDefault("Creature.PickPocketRefillDelay", 10 * MINUTE);
     m_int_configs[CONFIG_CREATURE_STOP_FOR_PLAYER] = sConfigMgr->GetIntDefault("Creature.MovingStopTimeForPlayer", 3 * MINUTE * IN_MILLISECONDS);
@@ -1305,6 +1325,14 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_PDUMP_NO_PATHS] = sConfigMgr->GetBoolDefault("PlayerDump.DisallowPaths", true);
     m_bool_configs[CONFIG_PDUMP_NO_OVERWRITE] = sConfigMgr->GetBoolDefault("PlayerDump.DisallowOverwrite", true);
     m_bool_configs[CONFIG_UI_QUESTLEVELS_IN_DIALOGS] = sConfigMgr->GetBoolDefault("UI.ShowQuestLevelsInDialogs", false);
+	m_bool_configs[CONFIG_DEATH_KNIGHT_SKIP_QUEST] = sConfigMgr->GetBoolDefault("DeathKnight.SkipQuest", true);
+
+    // Passive anticheat
+    m_bool_configs[CONFIG_ANTICHEAT_ENABLE] = sConfigMgr->GetBoolDefault("Anticheat.Enable", false);
+    m_int_configs[CONFIG_ANTICHEAT_REPORTS_INGAME_NOTIFICATION] = sConfigMgr->GetIntDefault("Anticheat.ReportsForIngameWarnings", 70);
+    m_int_configs[CONFIG_ANTICHEAT_DETECTIONS_ENABLED] = sConfigMgr->GetIntDefault("Anticheat.DetectionsEnabled",31);
+    m_int_configs[CONFIG_ANTICHEAT_PLAYER_REPORT_DELAY] = sConfigMgr->GetIntDefault("Anticheat.ReportDelay", 5000);
+    m_int_configs[CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT] = sConfigMgr->GetIntDefault("Anticheat.MaxReportsForDailyReport",70);
 
     // Wintergrasp battlefield
     m_bool_configs[CONFIG_WINTERGRASP_ENABLE] = sConfigMgr->GetBoolDefault("Wintergrasp.Enable", false);
@@ -1632,6 +1660,9 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading UNIT_NPC_FLAG_SPELLCLICK Data..."); // must be after LoadQuests
     sObjectMgr->LoadNPCSpellClickSpells();
+
+    TC_LOG_INFO("server.loading", "Loading Chat Filter Words...");
+	sObjectMgr->LoadChatFilter();
 
     TC_LOG_INFO("server.loading", "Loading Vehicle Template Accessories...");
     sObjectMgr->LoadVehicleTemplateAccessories();                // must be after LoadCreatureTemplates() and LoadNPCSpellClickSpells()
@@ -3061,6 +3092,8 @@ void World::ResetDailyQuests()
 
     // change available dailies
     sPoolMgr->ChangeDailyQuests();
+
+    sAnticheatMgr->ResetDailyReportStates();
 }
 
 void World::LoadDBAllowedSecurityLevel()

@@ -2538,6 +2538,51 @@ class spell_q13665_q13790_bested_trigger : public SpellScriptLoader
         }
 };
 
+enum eQuest10857
+{
+	// NPCs
+	NPC_WESTERN_TP       = 22348,
+	NPC_EASTERN_TP       = 22351,
+	NPC_CENTRAL_TP       = 22350
+};
+
+class spell_q10857_detonate : public SpellScriptLoader
+{
+	public:
+		spell_q10857_detonate() : SpellScriptLoader("spell_q10857_detonate") { }
+
+		class spell_q10857_detonate_SpellScript : public SpellScript
+		{
+			PrepareSpellScript(spell_q10857_detonate_SpellScript);
+
+			void HandleScript(SpellEffIndex /*effIndex*/)
+			{
+				// according to hit target it will make player call kill credit of it to self respectively
+				if (GetHitCreature()->GetEntry() == NPC_WESTERN_TP)
+					if (Unit* owner = GetCaster()->GetCharmer())
+						owner->ToPlayer()->KilledMonsterCredit(NPC_WESTERN_TP);
+				        //caster->KilledMonsterCredit(NPC_WESTERN_TP, 0);
+				if (GetHitCreature()->GetEntry() == NPC_EASTERN_TP)
+					if (Unit* owner = GetCaster()->GetCharmer())
+						owner->ToPlayer()->KilledMonsterCredit(NPC_EASTERN_TP);
+				        //caster->KilledMonsterCredit(NPC_EASTERN_TP, 0);
+				if (GetHitCreature()->GetEntry() == NPC_CENTRAL_TP)
+					if (Unit* owner = GetCaster()->GetCharmer())
+						owner->ToPlayer()->KilledMonsterCredit(NPC_CENTRAL_TP);
+						//caster->KilledMonsterCredit(NPC_CENTRAL_TP, 0);
+			}
+
+			void Register()
+			{
+				OnEffectHitTarget += SpellEffectFn(spell_q10857_detonate_SpellScript::HandleScript, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
+			}
+		};
+
+		SpellScript* GetSpellScript() const
+		{
+			return new spell_q10857_detonate_SpellScript();
+		}
+};
 // herald of war and life without regret portal spells
 class spell_59064_59439_portals : public SpellScriptLoader
 {
@@ -2628,4 +2673,5 @@ void AddSC_quest_spell_scripts()
     new spell_q12414_hand_over_reins();
     new spell_q13665_q13790_bested_trigger();
     new spell_59064_59439_portals();
+    new spell_q10857_detonate();
 }

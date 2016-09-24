@@ -23,7 +23,7 @@
 #define ICCScriptName "instance_icecrown_citadel"
 #define DataHeader    "IC"
 
-uint32 const EncounterCount = 13;
+uint32 const EncounterCount = 14;
 uint32 const WeeklyNPCs = 9;
 uint32 const MaxHeroicAttempts = 50;
 
@@ -116,7 +116,8 @@ enum DataTypes
     DATA_TERENAS_MENETHIL              = 39,
     DATA_ENEMY_GUNSHIP                 = 40,
     DATA_UPPERSPIRE_TELE_ACT           = 41, /// also used by conditions
-    DATA_BLOOD_QUEEN_LANA_THEL_COUNCIL = 42
+    DATA_BLOOD_QUEEN_LANA_THEL_COUNCIL = 42,
+    DATA_SINDRAGOSA_GAUNTLET           = 43
 };
 
 enum CreaturesIds
@@ -317,6 +318,14 @@ enum CreaturesIds
     NPC_WORLD_TRIGGER_INFINITE_AOI              = 36171,
     NPC_SPIRIT_BOMB                             = 39189,
     NPC_FROSTMOURNE_TRIGGER                     = 38584,
+
+    // Sindragosas Ward	
+    NPC_SINDRAGOSAS_WARD                        = 37503,	
+    NPC_NERUBAR_WEBWEAVER                       = 37502,	
+    NPC_NERUBAR_CHAMPION                        = 37501,	
+    NPC_NERUBAR_BROODLING                       = 37232,	
+    NPC_FROSTWARDEN_WARRIOR                     = 37228,	
+    NPC_FROSTWARDEN_SORCERESS                   = 37229,
 
     // Generic
     NPC_INVISIBLE_STALKER                       = 30298

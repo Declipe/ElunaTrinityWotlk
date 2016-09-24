@@ -258,6 +258,7 @@ struct AuthSession
     uint64 DosResponse = 0;
     uint8 Digest[SHA_DIGEST_LENGTH] = {};
     std::string Account;
+	bool isPremium;
     ByteBuffer AddonInfo;
 };
 
@@ -271,6 +272,7 @@ struct AccountInfo
     uint8 Expansion;
     int64 MuteTime;
     LocaleConstant Locale;
+    bool isPremium = false;
     uint32 Recruiter;
     std::string OS;
     bool IsRectuiter;
@@ -572,7 +574,17 @@ void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSes
         return;
     }
 
-    // Check locked state for server
+	// Check premium
+	stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PREMIUM);
+	stmt->setUInt32(0, account.Id);
+	PreparedQueryResult premresult = LoginDatabase.Query(stmt);
+
+		if (premresult)
+		{
+		account.isPremium = true;
+		}
+	
+	// Check locked state for server
     AccountTypes allowedAccountType = sWorld->GetPlayerSecurityLimit();
     TC_LOG_DEBUG("network", "Allowed Level: %u Player Level %u", allowedAccountType, account.Security);
     if (allowedAccountType > SEC_PLAYER && account.Security < allowedAccountType)
@@ -598,8 +610,8 @@ void WorldSocket::HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSes
     sScriptMgr->OnAccountLogin(account.Id);
 
     _authed = true;
-    _worldSession = new WorldSession(account.Id, std::move(authSession->Account), shared_from_this(), account.Security,
-        account.Expansion, mutetime, account.Locale, account.Recruiter, account.IsRectuiter);
+	_worldSession = new WorldSession(account.Id, std::move(authSession->Account), shared_from_this(), account.Security, account.isPremium,
+		account.Expansion, mutetime, account.Locale, account.Recruiter, account.IsRectuiter);
     _worldSession->ReadAddonsInfo(authSession->AddonInfo);
 
     // Initialize Warden system only if it is enabled by config

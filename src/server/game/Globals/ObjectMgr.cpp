@@ -2405,7 +2405,7 @@ void ObjectMgr::LoadItemTemplates()
         for (uint8 i = 0; i < itemTemplate.StatsCount; ++i)
         {
             itemTemplate.ItemStat[i].ItemStatType  = uint32(fields[28 + i*2].GetUInt8());
-            itemTemplate.ItemStat[i].ItemStatValue = int32(fields[29 + i*2].GetInt16());
+			itemTemplate.ItemStat[i].ItemStatValue = uint32(fields[29 + i * 2].GetInt32());
         }
 
         itemTemplate.ScalingStatDistribution = uint32(fields[48].GetUInt16());
@@ -3207,7 +3207,7 @@ void ObjectMgr::LoadPetLevelInfo()
         }
 
         // fill level gaps
-        for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
+        for (uint32 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
         {
             if (pInfo[level].health == 0)
             {
@@ -3220,7 +3220,7 @@ void ObjectMgr::LoadPetLevelInfo()
     TC_LOG_INFO("server.loading", ">> Loaded %u level pet stats definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-PetLevelInfo const* ObjectMgr::GetPetLevelInfo(uint32 creature_id, uint8 level) const
+PetLevelInfo const* ObjectMgr::GetPetLevelInfo(uint32 creature_id, uint32 level) const
 {
     if (level > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
         level = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
@@ -3729,7 +3729,7 @@ void ObjectMgr::LoadPlayerInfo()
             }
 
             // fill level gaps
-            for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
+            for (uint32 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
             {
                 if (pClassInfo->levelInfo[level].basehealth == 0)
                 {
@@ -3836,7 +3836,7 @@ void ObjectMgr::LoadPlayerInfo()
                 }
 
                 // fill level gaps
-                for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
+                for (uint32 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
                 {
                     if (info->levelInfo[level].stats[0] == 0)
                     {
@@ -3856,7 +3856,7 @@ void ObjectMgr::LoadPlayerInfo()
         uint32 oldMSTime = getMSTime();
 
         _playerXPperLevel.resize(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
-        for (uint8 level = 0; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
+        for (uint32 level = 0; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
             _playerXPperLevel[level] = 0;
 
         //                                                  0         1
@@ -3895,7 +3895,7 @@ void ObjectMgr::LoadPlayerInfo()
         while (result->NextRow());
 
         // fill level gaps
-        for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
+        for (uint32 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
         {
             if (_playerXPperLevel[level] == 0)
             {
@@ -3908,7 +3908,7 @@ void ObjectMgr::LoadPlayerInfo()
     }
 }
 
-void ObjectMgr::GetPlayerClassLevelInfo(uint32 class_, uint8 level, PlayerClassLevelInfo* info) const
+void ObjectMgr::GetPlayerClassLevelInfo(uint32 class_, uint32 level, PlayerClassLevelInfo* info) const
 {
     if (level < 1 || class_ >= MAX_CLASSES)
         return;
@@ -3921,7 +3921,7 @@ void ObjectMgr::GetPlayerClassLevelInfo(uint32 class_, uint8 level, PlayerClassL
     *info = pInfo->levelInfo[level-1];
 }
 
-void ObjectMgr::GetPlayerLevelInfo(uint32 race, uint32 class_, uint8 level, PlayerLevelInfo* info) const
+void ObjectMgr::GetPlayerLevelInfo(uint32 race, uint32 class_, uint32 level, PlayerLevelInfo* info) const
 {
     if (level < 1 || race >= MAX_RACES || class_ >= MAX_CLASSES)
         return;
@@ -3936,7 +3936,7 @@ void ObjectMgr::GetPlayerLevelInfo(uint32 race, uint32 class_, uint8 level, Play
         BuildPlayerLevelInfo(race, class_, level, info);
 }
 
-void ObjectMgr::BuildPlayerLevelInfo(uint8 race, uint8 _class, uint8 level, PlayerLevelInfo* info) const
+void ObjectMgr::BuildPlayerLevelInfo(uint8 race, uint8 _class, uint32 level, PlayerLevelInfo* info) const
 {
     // base data (last known level)
     *info = _playerInfo[race][_class]->levelInfo[sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)-1];
@@ -6090,7 +6090,7 @@ void ObjectMgr::LoadGraveyardZones()
     TC_LOG_INFO("server.loading", ">> Loaded %u graveyard-zone links in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-WorldSafeLocsEntry const* ObjectMgr::GetDefaultGraveYard(uint32 team) const
+/*WorldSafeLocsEntry const* ObjectMgr::GetDefaultGraveYard(uint32 team) const
 {
     enum DefaultGraveyard
     {
@@ -6104,7 +6104,7 @@ WorldSafeLocsEntry const* ObjectMgr::GetDefaultGraveYard(uint32 team) const
         return sWorldSafeLocsStore.LookupEntry(ALLIANCE_GRAVEYARD);
     else return nullptr;
 }
-
+*/
 WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float z, uint32 MapId, uint32 team) const
 {
     // search for zone associated closest graveyard
@@ -6113,10 +6113,11 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
     if (!zoneId)
     {
         if (z > -500)
-        {
+       // {
             TC_LOG_ERROR("misc", "ZoneId not found for map %u coords (%f, %f, %f)", MapId, x, y, z);
-            return GetDefaultGraveYard(team);
-        }
+            //return GetDefaultGraveYard(team);
+			return NULL;
+        //}
     }
 
     // Simulate std. algorithm:
@@ -6134,7 +6135,8 @@ WorldSafeLocsEntry const* ObjectMgr::GetClosestGraveYard(float x, float y, float
     {
         if (zoneId != 0) // zone == 0 can't be fixed, used by bliz for bugged zones
             TC_LOG_ERROR("sql.sql", "Table `graveyard_zone` incomplete: Zone %u Team %u does not have a linked graveyard.", zoneId, team);
-        return GetDefaultGraveYard(team);
+        //return GetDefaultGraveYard(team);
+        return NULL;
     }
 
     // at corpse map
@@ -6987,7 +6989,7 @@ void ObjectMgr::LoadExplorationBaseXP()
     do
     {
         Field* fields = result->Fetch();
-        uint8 level  = fields[0].GetUInt8();
+        uint32 level  = fields[0].GetUInt32();
         uint32 basexp = fields[1].GetInt32();
         _baseXPTable[level] = basexp;
         ++count;
@@ -6997,12 +6999,12 @@ void ObjectMgr::LoadExplorationBaseXP()
     TC_LOG_INFO("server.loading", ">> Loaded %u BaseXP definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-uint32 ObjectMgr::GetBaseXP(uint8 level)
+uint32 ObjectMgr::GetBaseXP(uint32 level)
 {
     return _baseXPTable[level] ? _baseXPTable[level] : 0;
 }
 
-uint32 ObjectMgr::GetXPForLevel(uint8 level) const
+uint32 ObjectMgr::GetXPForLevel(uint32 level) const
 {
     if (level < _playerXPperLevel.size())
         return _playerXPperLevel[level];
@@ -7446,6 +7448,33 @@ void ObjectMgr::LoadQuestPOI()
 
     TC_LOG_INFO("server.loading", ">> Loaded %u quest POI definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
+
+void ObjectMgr::LoadChatFilter()
+{
+	uint32 oldMSTime = getMSTime();
+
+	_chatFilterStore.clear();
+
+	QueryResult result = WorldDatabase.Query("SELECT word, punishment FROM chat_filter");
+
+	if (!result)
+	{
+		TC_LOG_ERROR("server.loading", ">> Loaded 0 ChatFilter words. DB table `chat_filter` is empty.");
+		return;
+	}
+
+	uint32 count = 0;
+
+	do
+	{
+		_chatFilterStore.push_back(std::make_pair((*result)[0].GetString(), (*result)[1].GetUInt32()));
+		count++;
+	} while (result->NextRow());
+
+	TC_LOG_ERROR("server.loading", ">> Loaded %u chat filter words in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+
+}
+
 
 void ObjectMgr::LoadNPCSpellClickSpells()
 {
@@ -8238,7 +8267,7 @@ void ObjectMgr::LoadMailLevelRewards()
     {
         Field* fields = result->Fetch();
 
-        uint8 level           = fields[0].GetUInt8();
+        uint32 level          = fields[0].GetUInt32();
         uint32 raceMask       = fields[1].GetUInt32();
         uint32 mailTemplateId = fields[2].GetUInt32();
         uint32 senderEntry    = fields[3].GetUInt32();
@@ -8925,7 +8954,7 @@ void ObjectMgr::LoadBroadcastTextLocales()
     TC_LOG_INFO("server.loading", ">> Loaded %u broadcast text locales in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-CreatureBaseStats const* ObjectMgr::GetCreatureBaseStats(uint8 level, uint8 unitClass)
+CreatureBaseStats const* ObjectMgr::GetCreatureBaseStats(uint32 level, uint8 unitClass)
 {
     CreatureBaseStatsContainer::const_iterator it = _creatureBaseStatsStore.find(MAKE_PAIR16(level, unitClass));
 
@@ -8968,7 +8997,7 @@ void ObjectMgr::LoadCreatureClassLevelStats()
     {
         Field* fields = result->Fetch();
 
-        uint8 Level = fields[0].GetUInt8();
+        uint32 Level = fields[0].GetUInt32();
         uint8 Class = fields[1].GetUInt8();
 
         if (!Class || ((1 << (Class - 1)) & CLASSMASK_ALL_CREATURES) == 0)

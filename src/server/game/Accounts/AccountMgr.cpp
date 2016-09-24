@@ -564,3 +564,4 @@ rbac::RBACPermissionContainer const& AccountMgr::GetRBACDefaultPermissions(uint8
     TC_LOG_TRACE("rbac", "AccountMgr::GetRBACDefaultPermissions: secLevel %u - size: %u", secLevel, uint32(_defaultPermissions[secLevel].size()));
     return _defaultPermissions[secLevel];
 }
+

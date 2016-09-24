@@ -1440,6 +1440,12 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
     if (GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->CastItemCombatSpell(victim, damageInfo->attackType, damageInfo->procVictim, damageInfo->procEx);
 
+    for (Unit* unit : m_Controlled)
+    {
+        if (unit->IsAIEnabled && unit->GetAI())
+            unit->GetAI()->OwnerMeleeDamageDealt(this, damageInfo);
+    }
+
     // Do effect if any damage done to target
     if (damageInfo->damage)
     {
@@ -1981,7 +1987,7 @@ void Unit::CalcHealAbsorb(Unit* victim, SpellInfo const* healSpell, uint32 &heal
     healAmount = RemainingHeal;
 }
 
-void Unit::AttackerStateUpdate (Unit* victim, WeaponAttackType attType, bool extra)
+void Unit::AttackerStateUpdate(Unit* victim, WeaponAttackType attType, bool extra)
 {
     if (HasUnitState(UNIT_STATE_CANNOT_AUTOATTACK) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return;
@@ -7212,31 +7218,6 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                 triggered_spell_id = 50163;
                 target = this;
                 break;
-            }
-            // Dancing Rune Weapon
-            if (dummySpell->Id == 49028)
-            {
-                // 1 dummy aura for dismiss rune blade
-                if (effIndex != 1)
-                    return false;
-
-                Unit* pPet = NULL;
-                for (ControlList::const_iterator itr = m_Controlled.begin(); itr != m_Controlled.end(); ++itr) // Find Rune Weapon
-                    if ((*itr)->GetEntry() == 27893)
-                    {
-                        pPet = *itr;
-                        break;
-                    }
-
-                if (pPet && pPet->GetVictim() && damage && procSpell)
-                {
-                    uint32 procDmg = damage / 2;
-                    pPet->SendSpellNonMeleeDamageLog(pPet->GetVictim(), procSpell->Id, procDmg, procSpell->GetSchoolMask(), 0, 0, false, 0, false);
-                    pPet->DealDamage(pPet->GetVictim(), procDmg, NULL, SPELL_DIRECT_DAMAGE, procSpell->GetSchoolMask(), procSpell, true);
-                    break;
-                }
-                else
-                    return false;
             }
             // Mark of Blood
             if (dummySpell->Id == 49005)
@@ -15075,7 +15056,11 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
             Loot* loot = &creature->loot;
 
             loot->clear();
-            if (uint32 lootid = creature->GetCreatureTemplate()->lootid)
+			uint32 lootid = 0;
+			sScriptMgr->AllCreatureCreateLoot(creature, lootid);
+			if (lootid)
+				loot->FillLoot(lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
+			else if (lootid = creature->GetCreatureTemplate()->lootid)
                 loot->FillLoot(lootid, LootTemplates_Creature, looter, false, false, creature->GetLootMode());
 
             loot->generateMoneyLoot(creature->GetCreatureTemplate()->mingold, creature->GetCreatureTemplate()->maxgold);
@@ -15206,6 +15191,9 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
         // Call creature just died function
         if (creature->IsAIEnabled)
             creature->AI()->JustDied(this);
+
+		if (creature)
+			sScriptMgr->AllCreatureJustDied(creature);
 
         if (TempSummon* summon = creature->ToTempSummon())
             if (Unit* summoner = summon->GetSummoner())
@@ -16568,6 +16556,21 @@ uint32 Unit::GetModelForTotem(PlayerTotemType totemType)
             }
             break;
         }
+        default: // One standard for other races.
+            {
+                switch (totemType)
+                    {
+                    case SUMMON_TYPE_TOTEM_FIRE:    // fire
+                        return 4589;
+                        case SUMMON_TYPE_TOTEM_EARTH:   // earth
+                            return 4588;
+                            case SUMMON_TYPE_TOTEM_WATER:   // water
+                                return 4587;
+                                case SUMMON_TYPE_TOTEM_AIR:     // air
+                                    return 4590;
+                                    }
+                break;
+                }
     }
     return 0;
 }
@@ -17260,8 +17263,11 @@ void Unit::SetInFront(WorldObject const* target)
         SetOrientation(GetAngle(target));
 }
 
-void Unit::SetFacingTo(float ori)
+void Unit::SetFacingTo(float ori, bool force)
 {
+    if (!force && !IsStopped())
+        return;
+
     Movement::MoveSplineInit init(this);
     init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZMinusOffset(), false);
     if (HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && GetTransGUID())
@@ -17270,10 +17276,10 @@ void Unit::SetFacingTo(float ori)
     init.Launch();
 }
 
-void Unit::SetFacingToObject(WorldObject const* object)
+void Unit::SetFacingToObject(WorldObject const* object, bool force)
 {
-    // never face when already moving
-    if (!IsStopped())
+    // do not face when already moving
+    if (!force && !IsStopped())
         return;
 
     /// @todo figure out under what conditions creature will move towards object instead of facing it where it currently is.

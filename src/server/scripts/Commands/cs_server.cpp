@@ -111,7 +111,8 @@ public:
         std::string uptime          = secsToTimeString(sWorld->GetUptime());
         uint32 updateTime           = sWorld->GetUpdateTime();
 
-        handler->SendSysMessage(GitRevision::GetFullVersion());
+        //handler->SendSysMessage(GitRevision::GetFullVersion());
+        handler->PSendSysMessage("Core: OneGo Games Project 3.3.5a");
         handler->PSendSysMessage(LANG_CONNECTED_PLAYERS, playersNum, maxPlayersNum);
         handler->PSendSysMessage(LANG_CONNECTED_USERS, activeClientsNum, maxActiveClientsNum, queuedClientsNum, maxQueuedClientsNum);
         handler->PSendSysMessage(LANG_UPTIME, uptime.c_str());

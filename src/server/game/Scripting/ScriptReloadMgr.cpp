@@ -1077,7 +1077,7 @@ private:
 
             return;
         }
-
+        
         // Find all source files of a changed script module and removes
         // it from the changed source list, invoke the build afterwards.
         bool rebuild_buildfiles;

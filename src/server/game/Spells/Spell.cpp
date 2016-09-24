@@ -1298,6 +1298,187 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
             dest = SpellDestination(x, y, liquidLevel, m_caster->GetOrientation());
             break;
         }
+        case TARGET_DEST_CASTER_FRONT_LEAP:
+        {
+            float distance = m_spellInfo->Effects[effIndex].CalcRadius(m_caster);
+            Map* map = m_caster->GetMap();
+            uint32 mapid = m_caster->GetMapId();
+            uint32 phasemask = m_caster->GetPhaseMask();
+            float destx, desty, destz, ground;
+
+            Position pos;
+            Position lastpos;
+            pos = m_caster->GetPosition();
+            destx = pos.GetPositionX() + distance * cos(pos.GetOrientation());
+            desty = pos.GetPositionY() + distance * sin(pos.GetOrientation());
+
+            ground = map->GetHeight(phasemask, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ());
+
+            if (!m_caster->HasUnitMovementFlag(MOVEMENTFLAG_FALLING) || (pos.GetPositionZ() - ground < 25.0f))
+            {
+                float tstX, tstY, tstZ, prevX, prevY, prevZ;
+                float tstZ1, tstZ2, tstZ3, destz1, destz2, destz3, srange, srange1, srange2, srange3;
+                float maxtravelDistZ = 2.65f;
+                float overdistance = 0.0f;
+                float totalpath = 0.0f;
+                float beforewaterz = 0.0f;
+                const float  step = 2.0f;
+                const uint8 numChecks = ceil(fabs(distance / step));
+                const float DELTA_X = (destx - pos.GetPositionX()) / numChecks;
+                const float DELTA_Y = (desty - pos.GetPositionY()) / numChecks;
+                int j = 1;
+                for (; j < (numChecks + 1); j++)
+                {
+                    prevX = pos.GetPositionX() + (float(j - 1)*DELTA_X);
+                    prevY = pos.GetPositionY() + (float(j - 1)*DELTA_Y);
+                    tstX = pos.GetPositionX() + (float(j)*DELTA_X);
+                    tstY = pos.GetPositionY() + (float(j)*DELTA_Y);
+
+                    if (j < 2)
+                    {
+                        prevZ = pos.GetPositionZ();
+                    }
+                    else
+                    {
+                        prevZ = tstZ;
+                    }
+
+                    tstZ = map->GetHeight(phasemask, tstX, tstY, prevZ + maxtravelDistZ, true);
+                    ground = tstZ;
+
+                    if (!map->IsInWater(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()))
+                    {
+                        if (map->IsInWater(tstX, tstY, tstZ))
+                        {
+                            if (!(beforewaterz != 0.0f))
+                                beforewaterz = prevZ;
+                            tstZ = beforewaterz;
+                            srange = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX));
+                            //TC_LOG_ERROR("server", "(start was from land) step in water , number of cycle = %i , distance of step = %f, total path = %f, Z = %f", j, srange, totalpath, tstZ);
+                        }
+                    }
+                    else if (map->IsInWater(tstX, tstY, tstZ))
+                    {
+                        prevZ = pos.GetPositionZ();
+                        tstZ = pos.GetPositionZ();
+                        srange = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX));
+                        //TC_LOG_ERROR("server", "(start in water) step in water, number of cycle = %i , distance of step = %f, total path = %f", j, srange, totalpath);
+                    }
+
+                    if (!map->IsInWater(tstX, tstY, tstZ) && tstZ != beforewaterz)  // second safety check z for blink way if on the ground
+                    {
+                        // highest available point
+                        tstZ1 = map->GetHeight(phasemask, tstX, tstY, prevZ + maxtravelDistZ, true, 25.0f);
+                        // upper or floor
+                        tstZ2 = map->GetHeight(phasemask, tstX, tstY, prevZ, true, 25.0f);
+                        //lower than floor
+                        tstZ3 = map->GetHeight(phasemask, tstX, tstY, prevZ - maxtravelDistZ / 2, true, 25.0f);
+
+                        //distance of rays, will select the shortest in 3D
+                        srange1 = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX) + (tstZ1 - prevZ)*(tstZ1 - prevZ));
+                        //TC_LOG_ERROR("server", "step = %i, distance of ray1 = %f", j, srange1);
+                        srange2 = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX) + (tstZ2 - prevZ)*(tstZ2 - prevZ));
+                        //TC_LOG_ERROR("server", "step = %i, distance of ray2 = %f", j, srange2);
+                        srange3 = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX) + (tstZ3 - prevZ)*(tstZ3 - prevZ));
+                        //TC_LOG_ERROR("server", "step = %i, distance of ray3 = %f", j, srange3);
+
+                        if (srange1 < srange2)
+                            tstZ = tstZ1;
+                        else if (srange3 < srange2)
+                            tstZ = tstZ3;
+                        else
+                            tstZ = tstZ2;
+
+                        srange = sqrt((tstY - prevY)*(tstY - prevY) + (tstX - prevX)*(tstX - prevX) + (tstZ - prevZ)*(tstZ - prevZ));
+                        //TC_LOG_ERROR("server", "step on ground, number of cycle = %i , distance of step = %f, total path = %f", j, srange, totalpath);
+                    }
+
+                    destx = tstX;
+                    desty = tstY;
+                    destz = tstZ;
+
+                    totalpath += srange;
+
+                    if (totalpath > distance)
+                    {
+                        overdistance = totalpath - distance;
+                        //TC_LOG_ERROR("server", "total path > than distance in 3D , need to move back a bit for save distance, total path = %f, overdistance = %f", totalpath, overdistance);
+                    }
+
+                    bool col = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(mapid, prevX, prevY, prevZ + 0.5f, tstX, tstY, tstZ + 0.5f, tstX, tstY, tstZ, -0.5f);
+                    // check dynamic collision
+                    bool dcol = m_caster->GetMap()->getObjectHitPos(phasemask, prevX, prevY, prevZ + 0.5f, tstX, tstY, tstZ + 0.5f, tstX, tstY, tstZ, -0.5f);
+
+                    // collision occured
+                    if (col || dcol || (overdistance > 0.0f && !map->IsInWater(tstX, tstY, ground)) || (fabs(prevZ - tstZ) > maxtravelDistZ && (tstZ > prevZ)))
+                    {
+                        if ((overdistance > 0.0f) && (overdistance < step))
+                        {
+                            destx = prevX + overdistance * cos(pos.GetOrientation());
+                            desty = prevY + overdistance * sin(pos.GetOrientation());
+                            //TC_LOG_ERROR("server", "(collision) collision occured 1");
+                        }
+                        else
+                        {
+                            // move back a bit
+                            destx = tstX - (0.6 * cos(pos.GetOrientation()));
+                            desty = tstY - (0.6 * sin(pos.GetOrientation()));
+                            //TC_LOG_ERROR("server", "(collision) collision occured 2");
+                        }
+
+                        // highest available point
+                        destz1 = map->GetHeight(phasemask, destx, desty, prevZ + maxtravelDistZ, true, 25.0f);
+                        // upper or floor
+                        destz2 = map->GetHeight(phasemask, destx, desty, prevZ, true, 25.0f);
+                        //lower than floor
+                        destz3 = map->GetHeight(phasemask, destx, desty, prevZ - maxtravelDistZ / 2, true, 25.0f);
+
+                        //distance of rays, will select the shortest in 3D
+                        srange1 = sqrt((desty - prevY)*(desty - prevY) + (destx - prevX)*(destx - prevX) + (destz1 - prevZ)*(destz1 - prevZ));
+                        srange2 = sqrt((desty - prevY)*(desty - prevY) + (destx - prevX)*(destx - prevX) + (destz2 - prevZ)*(destz2 - prevZ));
+                        srange3 = sqrt((desty - prevY)*(desty - prevY) + (destx - prevX)*(destx - prevX) + (destz3 - prevZ)*(destz3 - prevZ));
+
+                        if (srange1 < srange2)
+                            destz = destz1;
+                        else if (srange3 < srange2)
+                            destz = destz3;
+                        else
+                            destz = destz2;
+
+                        //TC_LOG_ERROR("server", "(collision) destZ rewrited in prevZ");                         
+
+                        break;
+                    }
+                    // we have correct destz now
+                }
+                //}
+
+                lastpos.Relocate(destx, desty, destz + 0.5f, pos.GetOrientation());
+                dest = SpellDestination(lastpos);
+            }
+            else
+            {
+                float z = pos.GetPositionZ();
+                bool col = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(mapid, pos.GetPositionX(), pos.GetPositionY(), z + 0.5f, destx, desty, z + 0.5f, destx, desty, z, -0.5f);
+                // check dynamic collision
+                bool dcol = m_caster->GetMap()->getObjectHitPos(phasemask, pos.GetPositionX(), pos.GetPositionY(), z + 0.5f, destx, desty, z + 0.5f, destx, desty, z, -0.5f);
+
+                // collision occured
+                if (col || dcol)
+                {
+                    // move back a bit
+                    destx = destx - (0.6 * cos(pos.GetOrientation()));
+                    desty = desty - (0.6 * sin(pos.GetOrientation()));
+                }
+
+                lastpos.Relocate(destx, desty, z, pos.GetOrientation());
+                dest = SpellDestination(lastpos);
+                //float range = sqrt((desty - pos.GetPositionY())*(desty - pos.GetPositionY()) + (destx - pos.GetPositionX())*(destx - pos.GetPositionX()));
+                //TC_LOG_ERROR("server", "Blink number 2, in falling but at a hight, distance of blink = %f", range);
+            }
+
+            break;
+        }
         default:
         {
             float dist = m_spellInfo->Effects[effIndex].CalcRadius(m_caster);
@@ -1325,7 +1506,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
                     break;
             }
 
-            Position pos = dest._position;
+			 Position pos = dest._position;
             m_caster->MovePositionToFirstCollision(pos, dist, angle);
 
             dest.Relocate(pos);
@@ -2116,7 +2297,11 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
             m_delayMoment = targetInfo.timeDelay;
     }
     else
-        targetInfo.timeDelay = 0LL;
+    {
+        targetInfo.timeDelay = GetCCDelay(m_spellInfo);
+        if (m_delayMoment == 0 || m_delayMoment > targetInfo.timeDelay)
+            m_delayMoment = targetInfo.timeDelay;
+    }
 
     // If target reflect spell back to caster
     if (targetInfo.missCondition == SPELL_MISS_REFLECT)
@@ -3255,7 +3440,7 @@ void Spell::cast(bool skipCheck)
     SendSpellGo();
 
     // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
-    if ((m_spellInfo->Speed > 0.0f && !m_spellInfo->IsChanneled()) || m_spellInfo->HasAttribute(SPELL_ATTR4_UNK4))
+    if (((m_spellInfo->Speed > 0.0f || GetCCDelay(m_spellInfo) > 0) && !m_spellInfo->IsChanneled()) || m_spellInfo->Id == 14157 || m_spellInfo->Id == 70802)
     {
         // Remove used for cast item if need (it can be already NULL after TakeReagents call
         // in case delayed spell remove item at cast delay start
@@ -5617,6 +5802,199 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
             return SPELL_FAILED_NOT_READY;
 
     return CheckCast(true);
+}
+
+uint32 Spell::GetCCDelay(SpellInfo const* _spell)
+{
+    // CCD for spell with auras
+    AuraType auraWithCCD[] = 
+    {
+        SPELL_AURA_MOD_STUN,
+        SPELL_AURA_MOD_CONFUSE,
+        SPELL_AURA_MOD_FEAR,
+        SPELL_AURA_MOD_SILENCE,
+        SPELL_AURA_MOD_DISARM,
+        SPELL_AURA_MOD_ROOT,
+        SPELL_AURA_MOD_POSSESS
+    };
+    uint8 CCDArraySize = 7;
+
+    const uint32 delayForRoots           = 0; // currently unused
+    const uint32 delayForStuns           = 50;
+    const uint32 delayForDisarms         = 0; // currently unused
+    const uint32 delayForDisorients      = 100;
+    const uint32 delayForFears           = 100;
+    const uint32 delayForHorrors         = 50;
+    const uint32 delayForOpenerStuns     = 70;
+    const uint32 delayForScatters        = 100;
+    const uint32 delayForBanishes        = 50;
+    const uint32 NOdelayForInstantSpells = 0;
+
+    switch(_spell->SpellFamilyName)
+    {
+        case SPELLFAMILY_DEATHKNIGHT:
+            // Death Grip
+            if (_spell->Id == 49576)
+                return NOdelayForInstantSpells;
+            // Hungering Cold
+            if (_spell->Id == 49203)
+                return delayForDisorients;
+            // Gnaw (ghoul's stun)
+            if (_spell->Id == 47481)
+                return delayForStuns;
+            break;
+        case SPELLFAMILY_DRUID:
+            // Bash
+            if (_spell->Id == 5211)
+                return delayForStuns;
+            // Cyclone
+            if (_spell->Id == 33786)
+                return delayForBanishes;
+            // Hibernate 
+            if (_spell->Id == 2637)
+                return delayForDisorients;
+            // Feral charge
+            if (_spell->Id == 45334)
+                return NOdelayForInstantSpells; 
+            // Maim
+            if (_spell->Id == 22570)
+                return delayForStuns;
+            // Pounce
+            if (_spell->Id == 9005)
+                return delayForOpenerStuns;
+            break;
+        case SPELLFAMILY_HUNTER: // TODO all pet's cc 
+            // Traps
+            if (_spell->SpellFamilyFlags[0] & 0x8 || // Frozen trap
+                _spell->Id == 57879 || // Snake Trap
+                _spell->SpellFamilyFlags[2] & 0x00024000) // Explosive and Immolation Trap
+                return 0;
+            // Entrapment
+            if (_spell->SpellIconID == 20)
+                return 0;
+            // Scatter Shot
+            if (_spell->Id == 19503)
+                return delayForScatters;
+            // Wyvern Sting
+            if (_spell->Id == 19386)
+                return delayForDisorients;
+            break;
+        case SPELLFAMILY_MAGE:
+             // Deep Freeze
+            if (_spell->Id == 44572)
+                return delayForStuns;
+            // Dragon Breath
+            if (_spell->Id == 42950)
+                return delayForDisorients;
+            // Impact
+            if (_spell->Id == 64343)
+                return delayForStuns;
+            // Polymorph
+            if (_spell->Id == 12826)
+                return delayForDisorients;
+            break;
+        case SPELLFAMILY_PALADIN:
+            // Hammer of Justice
+            if (_spell->Id == 853)
+                return delayForStuns;
+            // Repentance
+            if (_spell->Id == 20066)
+                return delayForDisorients;
+            // Turn Evil
+            if (_spell->Id == 10326)
+                return delayForFears;
+            break;
+        case SPELLFAMILY_PRIEST:
+            // Psychic Scream
+            if (_spell->Id == 10890)
+                 return delayForFears;
+            // Mind Control
+            if (_spell->Id == 605)
+                return delayForBanishes;
+            // Psychic Horror
+            if (_spell->Id == 64044)
+                return delayForHorrors;
+            // Shackle Undead
+            if (_spell->Id == 9484)
+                return delayForDisorients;
+            break;
+        case SPELLFAMILY_ROGUE:
+            // Blind
+            if (_spell->Id == 2094)
+                return delayForDisorients;
+            // CheapShot
+            if (_spell->Id == 1833)
+                return delayForOpenerStuns;
+            // Gouge
+            if (_spell->Id == 1776)
+                return delayForDisorients;
+            // Kidney Shot
+            if (_spell->Id == 408)
+                return delayForStuns;
+            // Sap
+            if (_spell->Id == 6770)
+                return delayForDisorients;
+            break;
+        case SPELLFAMILY_SHAMAN:
+            // Hex
+            if (_spell->Id == 51514)
+                return delayForDisorients;
+            break;
+        case SPELLFAMILY_WARLOCK: // TODO felguard's intercept(27826?), seduction
+            // Banish
+            if (_spell->Id == 710)
+                return delayForBanishes;
+            // DeathCoil
+            if (_spell->Id == 27223)
+                return delayForHorrors;
+            // Demon charge 
+            if (_spell->Id == 60995) // might use 54785 - req testing
+                return delayForStuns;
+            // Fear
+            if (_spell->Id == 5782)
+                return delayForFears;
+            // Howl of Terror
+            if (_spell->Id == 5484)
+                return delayForFears;
+            // Shadowfury
+            if (_spell->Id == 30283)
+                return delayForStuns;
+            // Spell Lock - Debuff
+            if (_spell->Id == 24259)
+                return NOdelayForInstantSpells;
+           break;
+        case SPELLFAMILY_WARRIOR:
+            // Charge
+            if (_spell->Id == 7922)
+                return delayForOpenerStuns;
+            // Charge trig.
+            if (_spell->Id == 65929)
+                return delayForStuns;
+            // Concussion Blow
+            if (_spell->Id == 12809)
+                return delayForStuns;
+            // Intercept
+            if (_spell->Id == 20253)
+                return delayForStuns;
+            // Intimidating Shout
+            if (_spell->Id == 20511)
+                return delayForFears;
+            // Shockwave
+            if (_spell->Id == 46968)
+                return delayForStuns;
+            break;    
+        case SPELLFAMILY_GENERIC: // is that ok?!
+            // War Stomp - Tauren's racial
+            if (_spell->Id == 46026)
+                return delayForStuns;
+            break;
+    }
+
+    for (uint8 i = 0; i < CCDArraySize; ++i)
+         if (_spell->HasAura(auraWithCCD[i]))
+             return NOdelayForInstantSpells;
+
+    return 0;
 }
 
 SpellCastResult Spell::CheckCasterAuras() const

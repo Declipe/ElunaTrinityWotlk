@@ -705,6 +705,7 @@ class TC_GAME_API ObjectMgr
         typedef std::unordered_map<uint32, PointOfInterest> PointOfInterestContainer;
 
         typedef std::vector<std::string> ScriptNameContainer;
+        typedef std::vector<std::pair<std::string, uint32> > ChatFilterContainer;
 
         typedef std::map<uint32, uint32> CharacterConversionMap;
 
@@ -741,7 +742,7 @@ class TC_GAME_API ObjectMgr
 
         InstanceTemplate const* GetInstanceTemplate(uint32 mapId) const;
 
-        PetLevelInfo const* GetPetLevelInfo(uint32 creature_id, uint8 level) const;
+        PetLevelInfo const* GetPetLevelInfo(uint32 creature_id, uint32 level) const;
 
         PlayerClassInfo const* GetPlayerClassInfo(uint32 class_) const
         {
@@ -749,11 +750,11 @@ class TC_GAME_API ObjectMgr
                 return nullptr;
             return _playerClassInfo[class_];
         }
-        void GetPlayerClassLevelInfo(uint32 class_, uint8 level, PlayerClassLevelInfo* info) const;
+        void GetPlayerClassLevelInfo(uint32 class_, uint32 level, PlayerClassLevelInfo* info) const;
 
         PlayerInfo const* GetPlayerInfo(uint32 race, uint32 class_) const;
 
-        void GetPlayerLevelInfo(uint32 race, uint32 class_, uint8 level, PlayerLevelInfo* info) const;
+        void GetPlayerLevelInfo(uint32 race, uint32 class_, uint32 level, PlayerLevelInfo* info) const;
 
         ObjectGuid GetPlayerGUIDByName(std::string const& name) const;
 
@@ -1038,6 +1039,8 @@ class TC_GAME_API ObjectMgr
         void LoadNPCSpellClickSpells();
 
         void LoadGameTele();
+        void LoadChatFilter();
+	ChatFilterContainer& GetCensoredWords() { return _chatFilterStore; }
 
         void LoadGossipMenu();
         void LoadGossipMenuItems();
@@ -1047,8 +1050,8 @@ class TC_GAME_API ObjectMgr
         void AddSpellToTrainer(uint32 entry, uint32 spell, uint32 spellCost, uint32 reqSkill, uint32 reqSkillValue, uint32 reqLevel);
 
         std::string GeneratePetName(uint32 entry);
-        uint32 GetBaseXP(uint8 level);
-        uint32 GetXPForLevel(uint8 level) const;
+        uint32 GetBaseXP(uint32 level);
+        uint32 GetXPForLevel(uint32 level) const;
 
         int32 GetFishingBaseSkillLevel(uint32 entry) const
         {
@@ -1058,7 +1061,7 @@ class TC_GAME_API ObjectMgr
 
         void ReturnOrDeleteOldMails(bool serverUp);
 
-        CreatureBaseStats const* GetCreatureBaseStats(uint8 level, uint8 unitClass);
+        CreatureBaseStats const* GetCreatureBaseStats(uint32 level, uint8 unitClass);
 
         void SetHighestGuids();
 
@@ -1395,6 +1398,8 @@ class TC_GAME_API ObjectMgr
 
         SpellScriptsContainer _spellScriptsStore;
 
+        ChatFilterContainer _chatFilterStore;
+
         VehicleAccessoryContainer _vehicleTemplateAccessoryStore;
         VehicleAccessoryContainer _vehicleAccessoryStore;
 
@@ -1418,7 +1423,7 @@ class TC_GAME_API ObjectMgr
 
         PlayerClassInfo* _playerClassInfo[MAX_CLASSES];
 
-        void BuildPlayerLevelInfo(uint8 race, uint8 class_, uint8 level, PlayerLevelInfo* plinfo) const;
+        void BuildPlayerLevelInfo(uint8 race, uint8 class_, uint32 level, PlayerLevelInfo* plinfo) const;
 
         PlayerInfo* _playerInfo[MAX_RACES][MAX_CLASSES];
 

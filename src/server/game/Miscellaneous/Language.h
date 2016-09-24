@@ -1058,6 +1058,23 @@ enum TrinityStrings
     LANG_COMMAND_TICKETLISTRESPONSE     = 2029,
     LANG_COMMAND_TICKETCOMPLETED        = 2030,
 
+    // Anticheat Strings 2031-2045
+    LANG_COMMAND_ACWARN                 = 2031,
+    LANG_COMMAND_ACDISABLED             = 2032,
+    LANG_COMMAND_ACHANDLEENABLED        = 2033,
+    LANG_COMMAND_ACHANDLEDISABLED       = 2034,
+    LANG_COMMAND_ACPLAYER_INFO          = 2035,
+    LANG_COMMAND_ACPLAYER_STATS         = 2036,
+    LANG_COMMAND_ACPLAYER_SPEEDFLYJUMP  = 2037,
+    LANG_COMMAND_ACPLAYER_WATERPLANE    = 2038,
+    LANG_COMMAND_ACPLAYER_CLIMB         = 2039,
+    LANG_AC_CHEAT_REPORT                = 2040,
+    LANG_COMMAND_ACGLOBAL_BAR           = 2041,
+    LANG_COMMAND_ACGLOBAL_AVERAGE_INFO  = 2042,
+    LANG_COMMAND_ACGLOBAL_AVERAGE_STATS = 2043,
+    LANG_COMMAND_ACGLOBAL_REPORT_INFO   = 2044,
+    LANG_COMMAND_ACGLOBAL_REPORT_STATS  = 2045,
+
     // Trinity strings                    5000-9999
     LANG_COMMAND_FREEZE                 = 5000,
     LANG_COMMAND_FREEZE_ERROR           = 5001,
@@ -1218,7 +1235,13 @@ enum TrinityStrings
     LANG_INSTANCE_BIND_MISMATCH                   = 11014,
     LANG_CREATURE_NOT_AI_ENABLED                  = 11015,
     LANG_SELECT_PLAYER_OR_PET                     = 11016,
-    LANG_SHUTDOWN_DELAYED                         = 11017,
-    LANG_SHUTDOWN_CANCELLED                       = 11018
+	LANG_SHUTDOWN_DELAYED                         = 11017,
+	LANG_SHUTDOWN_CANCELLED                       = 11018,
+    LANG_BAN_CHEATER                              = 11999,
+    LANG_RATE_WAIT                                = 61002,
+    LANG_RATE_BETWEEN                             = 61003,
+    LANG_RATE_SET_ACCOUNT                         = 61004,
+    LANG_RATE_SET_CHARACTER                       = 61005,
+    LANG_PREMIUM_CANT_DO                          = 12009
 };
 #endif

@@ -29,6 +29,7 @@
 #include "SpellMgr.h"
 #include "SpellHistory.h"
 #include "Unit.h"
+#include "Transmogrification.h"
 #include "TradeData.h"
 #include "CinematicMgr.h"
 
@@ -127,6 +128,18 @@ struct SpellModifier
     uint32 spellId;
     Aura* const ownerAura;
 };
+
+typedef std::unordered_map<ObjectGuid, uint32> TransmogMapType;
+
+#ifdef PRESETS
+typedef std::map<uint8, uint32> PresetslotMapType;
+struct PresetData
+{
+    std::string name;
+    PresetslotMapType slotMap; // slotMap[slotId] = entry
+};
+typedef std::map<uint8, PresetData> PresetMapType;
+#endif
 
 typedef std::unordered_map<uint32, PlayerTalent*> PlayerTalentMap;
 typedef std::unordered_map<uint32, PlayerSpell*> PlayerSpellMap;
@@ -817,6 +830,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_SEASONAL_QUEST_STATUS   = 31,
     PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS    = 32,
     PLAYER_LOGIN_QUERY_LOAD_CORPSE_LOCATION         = 33,
+    PLAYER_LOGIN_QUERY_LOAD_ANTICHEAT_HAS_REPORTS   = 34,
     MAX_PLAYER_LOGIN_QUERY
 };
 
@@ -1038,6 +1052,36 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         PlayerAI* AI() const { return reinterpret_cast<PlayerAI*>(i_AI); }
 
+        private:
+            bool m_ForgetBGPlayers;
+            bool m_ForgetInListPlayers;
+            uint8 m_FakeRace;
+            uint8 m_RealRace;
+            uint32 m_FakeMorph;
+            public:
+                typedef std::vector<uint64> FakePlayers;
+                void SendChatMessage(const char *format, ...);
+                void FitPlayerInTeam(bool action, Battleground* pBattleGround = NULL);          // void FitPlayerInTeam(bool action, Battleground* bg = NULL);
+                void DoForgetPlayersInList();
+                void DoForgetPlayersInBG(Battleground* pBattleGround);                                          // void DoForgetPlayersInBG(Battleground* bg);
+                uint8 getCFSRace() const { return m_RealRace; }
+				void SetCFSRace() { m_RealRace = GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_RACE); }; // SHOULD ONLY BE CALLED ON LOGIN
+                void SetFakeRace(); // SHOULD ONLY BE CALLED ON LOGIN
+                void SetFakeRaceAndMorph(); // SHOULD ONLY BE CALLED ON LOGIN
+                uint32 GetFakeMorph() { return m_FakeMorph; };
+                uint8 getFRace() const { return m_FakeRace; }
+                void SetForgetBGPlayers(bool value) { m_ForgetBGPlayers = value; }
+                bool ShouldForgetBGPlayers() { return m_ForgetBGPlayers; }
+                void SetForgetInListPlayers(bool value) { m_ForgetInListPlayers = value; }
+                bool ShouldForgetInListPlayers() { return m_ForgetInListPlayers; }
+                bool SendBattleGroundChat(uint32 msgtype, std::string message);
+                void MorphFit(bool value);
+                bool IsPlayingNative() const { return GetTeam() == m_team; }
+                uint32 GetCFSTeam() const { return m_team; }
+                uint32 GetTeam() const { return m_bgData.bgTeam && GetBattleground() ? m_bgData.bgTeam : m_team; }
+                bool SendRealNameQuery();
+                FakePlayers m_FakePlayers;
+
         void CleanupsBeforeDelete(bool finalCleanup = true) override;
 
         void AddToWorld() override;
@@ -1096,7 +1140,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         PlayerSocial *GetSocial() const { return m_social; }
 
         PlayerTaxi m_taxi;
-        void InitTaxiNodesForLevel() { m_taxi.InitTaxiNodesForLevel(getRace(), getClass(), getLevel()); }
+		void InitTaxiNodesForLevel() { m_taxi.InitTaxiNodesForLevel(getCFSRace(), getClass(), getLevel()); }
         bool ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc = nullptr, uint32 spellid = 0);
         bool ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid = 0);
         void CleanupAfterTaxiFlight();
@@ -1126,6 +1170,23 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool GetCommandStatus(uint32 command) const { return (_activeCheats & command) != 0; }
         void SetCommandStatusOn(uint32 command) { _activeCheats |= command; }
         void SetCommandStatusOff(uint32 command) { _activeCheats &= ~command; }
+
+        // PlayedTimeReward
+        uint32 ptr_Interval;
+        uint32 ptr_Money;
+        uint32 ptr_Honor;
+        uint32 ptr_Arena;
+		uint32 ptr_item1;
+		uint32 ptr_item2;
+		uint32 ptr_item3;
+		uint32 ptr_item4;
+		uint32 ptr_item5;
+		uint32 ptr_item1id;
+		uint32 ptr_item2id;
+		uint32 ptr_item3id;
+		uint32 ptr_item4id;
+		uint32 ptr_item5id;
+
 
         // Played Time Stuff
         time_t m_logintime;
@@ -1164,6 +1225,20 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void Whisper(std::string const& text, Language language, Player* receiver, bool = false) override;
         void Whisper(uint32 textId, Player* target, bool isBossWhisper = false) override;
 
+        /*********************************************************/
+	/***                 CHAT FILTER SYSTEM                ***/
+	/*********************************************************/
+
+	void SetLoggedOutWhilePunished(bool _true) { loggedOutWhilePunished = _true; }
+	bool LoggedOutWhilePunished() { return loggedOutWhilePunished; }
+	void SetFreezeStunTimer(bool freeze, uint32 _timer) { freeze ? freezeTimer = _timer : stunTimer = _timer; }
+	uint32 GetFreezeStunTimer(bool freeze) { return freeze ? freezeTimer : stunTimer; }
+
+        uint32 freezeTimer;
+	uint32 stunTimer;
+	bool loggedOutWhilePunished;
+
+	/*********************************************************/
         /*********************************************************/
         /***                    STORAGE SYSTEM                 ***/
         /*********************************************************/
@@ -1872,8 +1947,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void CheckAreaExploreAndOutdoor(void);
 
         static uint32 TeamForRace(uint8 race);
-        uint32 GetTeam() const { return m_team; }
-        TeamId GetTeamId() const { return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
+        TeamId GetTeamId() const { return GetTeam() == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
         void setFactionForRace(uint8 race);
 
         void InitDisplayIds();
@@ -2022,7 +2096,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetBattlegroundEntryPoint();
 
         void SetBGTeam(uint32 team);
-        uint32 GetBGTeam() const;
 
         void LeaveBattleground(bool teleportToEntryPoint = true);
         bool CanJoinToBattleground(Battleground const* bg) const;
@@ -2274,6 +2347,11 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
 
         std::string GetMapAreaAndZoneString() const;
         std::string GetCoordsMapAreaAndZoneString() const;
+
+        TransmogMapType transmogMap; // transmogMap[iGUID] = entry
+#ifdef PRESETS
+        PresetMapType presetMap; // presetMap[presetId] = presetData
+#endif
 
     protected:
         // Gamemaster whisper whitelist

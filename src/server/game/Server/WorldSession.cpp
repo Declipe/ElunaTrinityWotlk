@@ -25,6 +25,7 @@
 #include "Common.h"
 #include "DatabaseEnv.h"
 #include "AccountMgr.h"
+#include "AnticheatMgr.h"
 #include "Log.h"
 #include "Opcodes.h"
 #include "WorldPacket.h"
@@ -101,7 +102,7 @@ bool WorldSessionFilter::Process(WorldPacket* packet)
 }
 
 /// WorldSession constructor
-WorldSession::WorldSession(uint32 id, std::string&& name, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter):
+WorldSession::WorldSession(uint32 id, std::string&& name, std::shared_ptr<WorldSocket> sock, AccountTypes sec, bool ispremium, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter):
     m_muteTime(mute_time),
     m_timeOutTime(0),
     AntiDOS(this),
@@ -109,6 +110,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, std::shared_ptr<WorldS
     _player(NULL),
     m_Socket(sock),
     _security(sec),
+    _ispremium(ispremium),
     _accountId(id),
     _accountName(std::move(name)),
     m_expansion(expansion),
@@ -568,6 +570,8 @@ void WorldSession::LogoutPlayer(bool save)
         //! Broadcast a logout message to the player's friends
         sSocialMgr->SendFriendStatus(_player, FRIEND_OFFLINE, _player->GetGUID().GetCounter(), true);
         sSocialMgr->RemovePlayerSocial(_player->GetGUID().GetCounter());
+
+        sAnticheatMgr->HandlePlayerLogout(_player->GetGUID());
 
         //! Call script hook before deletion
         sScriptMgr->OnPlayerLogout(_player);

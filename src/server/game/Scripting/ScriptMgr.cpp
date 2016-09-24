@@ -23,6 +23,7 @@
 #include "DBCStores.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
+#include "sc_npc_teleport.h"
 #include "ScriptSystem.h"
 #include "Transport.h"
 #include "Vehicle.h"
@@ -1018,6 +1019,8 @@ void ScriptMgr::Initialize()
     uint32 oldMSTime = getMSTime();
 
     LoadDatabase();
+       // Load TeleNPC2 - maybe not the best place to load it ...
+       LoadNpcTele();
 
     TC_LOG_INFO("server.loading", "Loading C++ scripts");
 
@@ -1108,7 +1111,7 @@ std::shared_ptr<ModuleReference>
 void ScriptMgr::Unload()
 {
     sScriptRegistryCompositum->Unload();
-
+    
     delete[] SpellSummary;
     delete[] UnitAI::AISpellInfo;
 }
@@ -1116,6 +1119,7 @@ void ScriptMgr::Unload()
 void ScriptMgr::LoadDatabase()
 {
     sScriptSystemMgr->LoadScriptWaypoints();
+    sScriptSystemMgr->LoadScriptSplineChains();
 }
 
 void ScriptMgr::FillSpellSummary()
@@ -1796,6 +1800,16 @@ void ScriptMgr::OnCreatureUpdate(Creature* creature, uint32 diff)
     tmpscript->OnUpdate(creature, diff);
 }
 
+void ScriptMgr::AllCreatureCreateLoot(Creature* creature, uint32& lootid)
+{
+	FOREACH_SCRIPT(AllCreatureScript)->AllCreatureCreateLoot(creature, lootid);
+}
+
+void ScriptMgr::AllCreatureJustDied(Creature* creature)
+{
+	FOREACH_SCRIPT(AllCreatureScript)->AllCreatureJustDied(creature);
+}
+
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
 {
     ASSERT(player);
@@ -2419,7 +2433,7 @@ void ScriptMgr::OnPlayerSave(Player* player)
 void ScriptMgr::OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent, uint8 extendState)
 {
 #ifdef ELUNA
-    sEluna->OnBindToInstance(player, difficulty, mapid, permanent);
+    sEluna->OnBindToInstance(player, difficulty, mapid, permanent);//, extendState
 #endif
     FOREACH_SCRIPT(PlayerScript)->OnBindToInstance(player, difficulty, mapid, permanent, extendState);
 }
@@ -2482,6 +2496,11 @@ void ScriptMgr::OnPasswordChange(uint32 accountId)
 void ScriptMgr::OnFailedPasswordChange(uint32 accountId)
 {
     FOREACH_SCRIPT(AccountScript)->OnFailedPasswordChange(accountId);
+}
+
+void ScriptMgr::OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue)
+{
+	FOREACH_SCRIPT(PlayerScript)->OnPlayerSkillUpdate(player, SkillId, SkillValue, SkillNewValue);
 }
 
 // Guild
@@ -2721,6 +2740,12 @@ CreatureScript::CreatureScript(const char* name)
     ScriptRegistry<CreatureScript>::Instance()->AddScript(this);
 }
 
+AllCreatureScript::AllCreatureScript(const char* name)
+: ScriptObject(name)
+{
+	ScriptRegistry<AllCreatureScript>::Instance()->AddScript(this);
+}
+
 GameObjectScript::GameObjectScript(const char* name)
     : ScriptObject(name)
 {
@@ -2818,6 +2843,7 @@ GroupScript::GroupScript(const char* name)
 }
 
 // Specialize for each script type class like so:
+template class TC_GAME_API ScriptRegistry<AllCreatureScript>;
 template class TC_GAME_API ScriptRegistry<SpellScriptLoader>;
 template class TC_GAME_API ScriptRegistry<ServerScript>;
 template class TC_GAME_API ScriptRegistry<WorldScript>;

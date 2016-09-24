@@ -1902,6 +1902,11 @@ AuraStateType SpellInfo::GetAuraState() const
         case 71465: // Divine Surge
         case 50241: // Evasive Charges
             return AURA_STATE_UNKNOWN22;
+        case 35325: // Glowing Blood
+        case 35328: // Lambent Blood
+        case 35329: // Vibrant Blood
+        case 35331: // Black Blood
+            return AURA_STATE_FAERIE_FIRE;
         default:
             break;
     }
@@ -2414,6 +2419,7 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
                 case 54836: // Wrath of the Plaguebringer
                 case 61987: // Avenging Wrath Marker
                 case 61988: // Divine Shield exclude aura
+				case 63322: // Saronite Vapors
                     return false;
                 case 30877: // Tag Murloc
                 case 61716: // Rabbit Costume

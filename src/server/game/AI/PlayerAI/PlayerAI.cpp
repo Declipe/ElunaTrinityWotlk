@@ -591,7 +591,7 @@ PlayerAI::TargetedSpell PlayerAI::VerifySpellCast(uint32 spellId, Unit* target)
         knownRank = nextRank;
         nextRank = sSpellMgr->GetNextSpellInChain(knownRank);
     }
-
+    
     if (!knownRank)
         return {};
 

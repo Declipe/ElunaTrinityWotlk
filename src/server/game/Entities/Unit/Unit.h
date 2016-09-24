@@ -1337,8 +1337,11 @@ class TC_GAME_API Unit : public WorldObject
         uint8 getLevel() const { return uint8(GetUInt32Value(UNIT_FIELD_LEVEL)); }
         uint8 getLevelForTarget(WorldObject const* /*target*/) const override { return getLevel(); }
         void SetLevel(uint8 lvl);
-        uint8 getRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_RACE); }
+        //uint8 getRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_RACE); }
+		uint8 getRace(bool forceoriginal = false) const;
+		uint8 getCFSRace() { return getRace(true); }
         uint32 getRaceMask() const { return 1 << (getRace()-1); }
+		uint32 getCFSRaceMask() const { return 1 << (getRace(true) - 1); }
         uint8 getClass() const { return GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_CLASS); }
         uint32 getClassMask() const { return 1 << (getClass()-1); }
         uint8 getGender() const { return GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_GENDER); }
@@ -1611,8 +1614,8 @@ class TC_GAME_API Unit : public WorldObject
         virtual bool SetHover(bool enable, bool packetOnly = false);
 
         void SetInFront(WorldObject const* target);
-        void SetFacingTo(float ori);
-        void SetFacingToObject(WorldObject const* object);
+        void SetFacingTo(float ori, bool force = false);
+        void SetFacingToObject(WorldObject const* object, bool force = false);
 
         void SendChangeCurrentVictimOpcode(HostileReference* pHostileReference);
         void SendClearThreatListOpcode();

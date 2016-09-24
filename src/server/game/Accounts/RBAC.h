@@ -741,15 +741,22 @@ enum RBACPermissions
     RBAC_PERM_COMMAND_GO_QUEST                               = 834, // not on 3.3.5a
     RBAC_PERM_COMMAND_DEBUG_LOADCELLS                        = 835,
     RBAC_PERM_COMMAND_DEBUG_BOUNDARY                         = 836,
+
     RBAC_PERM_COMMAND_NPC_EVADE                              = 837,
     RBAC_PERM_COMMAND_PET_LEVEL                              = 838,
     RBAC_PERM_COMMAND_SERVER_SHUTDOWN_FORCE                  = 839,
     RBAC_PERM_COMMAND_SERVER_RESTART_FORCE                   = 840,
     RBAC_PERM_COMMAND_NEARGRAVEYARD                          = 841,
-    RBAC_PERM_COMMAND_RELOAD_CHARACTER_TEMPLATE              = 842, // not on 3.3.5a
-    RBAC_PERM_COMMAND_RELOAD_QUEST_GREETING                  = 843, // not on 3.3.5a
-    RBAC_PERM_COMMAND_DEBUG_SEND_PLAYSCENE                   = 844, // not on 3.3.5a
-
+    RBAC_PERM_COMMAND_ANTICHEAT                              = 842,
+    RBAC_PERM_COMMAND_ANTICHEAT_GLOBAL                       = 843,
+    RBAC_PERM_COMMAND_ANTICHEAT_PLAYER                       = 844,
+    RBAC_PERM_COMMAND_ANTICHEAT_HANDLE                       = 845,
+    RBAC_PERM_COMMAND_ANTICHEAT_JAIL                         = 846,
+    RBAC_PERM_COMMAND_ANTICHEAT_WARN                         = 847,
+    RBAC_PERM_COMMAND_RELOAD_CHAT_FILTER                     = 1590,
+    //RBAC_PERM_COMMAND_RELOAD_CHARACTER_TEMPLATE            = 842, // not on 3.3.5a
+   // RBAC_PERM_COMMAND_RELOAD_QUEST_GREETING                = 843, // not on 3.3.5a
+   // RBAC_PERM_COMMAND_DEBUG_SEND_PLAYSCENE                 = 844, // not on 3.3.5a
     // custom permissions 1000+
     RBAC_PERM_MAX
 };

@@ -1265,6 +1265,11 @@ void Guardian::UpdateMaxHealth()
     value += GetModifierValue(unitMod, TOTAL_VALUE) + stamina * multiplicator;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
 
+	Unit* owner = GetOwner();
+	if (GetEntry() == ENTRY_VOIDWALKER && owner && owner->GetTypeId() == TYPEID_PLAYER)
+	if (owner->HasAura(56247))
+		value *= 1.2f;
+
     SetMaxHealth((uint32)value);
 }
 

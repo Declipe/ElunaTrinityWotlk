@@ -84,6 +84,15 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellInfo const* spellproto,
             // Screams of the Dead (King Ymiron)
             else if (spellproto->Id == 51750)
                 return DIMINISHING_NONE;
+            // Triggered trample aura (ToC 5)
+            else if (spellproto->Id == 67868)
+                return DIMINISHING_NONE;
+            // The Black Knight's Death's Respite (ToC 5)
+            else if (spellproto->Id == 67745)
+                return DIMINISHING_NONE;
+            // The Black Knight's Death's Respite (Heroic ToC 5)
+            else if (spellproto->Id == 68306)
+                return DIMINISHING_NONE;
             break;
         }
         // Event spells
@@ -2934,6 +2943,11 @@ void SpellMgr::LoadSpellInfoCorrections()
                     if (!spellInfo->Speed && !spellInfo->SpellFamilyName)
                         spellInfo->Speed = SPEED_CHARGE;
                     break;
+				case SPELL_EFFECT_APPLY_GLYPH:
+					spellInfo->CastTimeEntry = sSpellCastTimesStore.LookupEntry(1);
+					break;
+				case SPELL_EFFECT_ENCHANT_ITEM:
+					spellInfo->CastTimeEntry = sSpellCastTimesStore.LookupEntry(1);
             }
 
             // Passive talent auras cannot target pets
@@ -2997,6 +3011,10 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 36350: // They Must Burn Bomb Aura (self)
                 spellInfo->Effects[EFFECT_0].TriggerSpell = 36325; // They Must Burn Bomb Drop (DND)
                 break;
+	    case 50259: // Daze from Feral Charge - Cat
+	    case 49376: // Feral Charge - Cat
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
             case 61407: // Energize Cores
             case 62136: // Energize Cores
             case 54069: // Energize Cores
@@ -3011,6 +3029,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // because of bug in dbc
                 spellInfo->ProcChance = 0;
                 break;
+			case 14892: // Inspiration (Rank 1)
+			case 15362: // Inspiration (Rank 2)
+			case 15363: // Inspiration (Rank 3)
             case 20335: // Heart of the Crusader
             case 20336:
             case 20337:
@@ -3019,6 +3040,13 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 63320: // Glyph of Life Tap
                 // Entries were not updated after spell effect change, we have to do that manually :/
                 spellInfo->AttributesEx3 |= SPELL_ATTR3_CAN_PROC_WITH_TRIGGERED;
+                break;
+            case 60103: // Lava Lash
+                 spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 52610: // Savage Roar
+                 spellInfo->AttributesEx |= SPELL_ATTR1_NOT_BREAK_STEALTH;
+                 spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
                 break;
             case 5308:  // Execute (Rank 1)
             case 20658: // Execute (Rank 2)
@@ -3077,10 +3105,37 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 54172: // Divine Storm (heal)
             case 29213: // Curse of the Plaguebringer - Noth
             case 28542: // Life Drain - Sapphiron
-            case 66588: // Flaming Spear
             case 54171: // Divine Storm
                 spellInfo->MaxAffectedTargets = 3;
                 break;
+			case 44461: // Living bomb
+			case 55361:
+			case 55362:
+				spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REFLECTED;
+				spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+				spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+				break;
+            case 5171:
+            case 6774:
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            case 69127: // Chill of the Throne
+                spellInfo->SchoolMask = SPELL_SCHOOL_MASK_NONE;
+                break;
+           case 61874: // Noblegarden Chocolate
+                spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_PERIODIC_TRIGGER_SPELL;
+                spellInfo->Effects[EFFECT_1].Amplitude = 10000;
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 24870;
+                break;
+			case 71464: // Divine Surge
+				spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+				spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(28);           // 5 seconds
+				break;
+			case 66588: // Flaming Spear
+				spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+				spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+				break;
             case 38310: // Multi-Shot
             case 53385: // Divine Storm (Damage)
                 spellInfo->MaxAffectedTargets = 4;
@@ -3174,6 +3229,27 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 29809: // Desecration Arm - 36 instead of 37 - typo? :/
                 spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_7_YARDS);
                 break;
+			case 18754: // Improved succubus - problems with apply if target is pet 
+				spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_ADD_FLAT_MODIFIER;    // it's affects duration of seduction, let's minimize affection 
+				spellInfo->Effects[EFFECT_0].BasePoints = -1.5*IN_MILLISECONDS*0.22;           // reduce cast time of seduction by 22%  
+				spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				break;
+			case 18755:
+				spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_ADD_FLAT_MODIFIER;
+				spellInfo->Effects[EFFECT_0].BasePoints = -1.5*IN_MILLISECONDS*0.44;           //  reduce cast time of seduction by 44% 
+				spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				break;
+			case 18756:
+				spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_ADD_FLAT_MODIFIER;
+				spellInfo->Effects[EFFECT_0].BasePoints = -1.5*IN_MILLISECONDS*0.66;           //  reduce cast time of seduction by 66% 
+				spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				//spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_MASTER);
+				break;
             // Master Shapeshifter: missing stance data for forms other than bear - bear version has correct data
             // To prevent aura staying on target after talent unlearned
             case 48420:
@@ -3336,6 +3412,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
                 break;
             case 34471: // The Beast Within
+				spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
                 spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_CONFUSED | SPELL_ATTR5_USABLE_WHILE_FEARED | SPELL_ATTR5_USABLE_WHILE_STUNNED;
                 break;
             case 56606: // Ride Jokkum
@@ -3345,7 +3422,17 @@ void SpellMgr::LoadSpellInfoCorrections()
                 break;
             case 59630: // Black Magic
                 spellInfo->Attributes |= SPELL_ATTR0_PASSIVE;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_DEATH_PERSISTENT;
                 break;
+            case 59578: // The Art of War (Rank 2) - FOL or Exorcism don't reset swing timer
+                spellInfo->Effects[EFFECT_1].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_IGNORE_MELEE_RESET;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_1].SpellClassMask = flag96(0x40000000, 0x00000002, 0x00000000);
+                break;
+           case 44535: // Spirit Heal, abilities also have no cost
+				spellInfo->Effects[EFFECT_0].MiscValue = 127;
+				break;
             case 17364: // Stormstrike
             case 48278: // Paralyze
             case 53651: // Light's Beacon
@@ -3356,6 +3443,32 @@ void SpellMgr::LoadSpellInfoCorrections()
                 //! HACK: This spell break quest complete for alliance and on retail not used °_O
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
+            // TRIAL OF THE CHAMPION SPELLS
+            //
+            case 67546: // Warrior Grand Champion - Rolling Throw
+                // Should hit both caster and target
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 66797: // The Black Knight - Death's Push (casted on announcer)
+                // The duration is correct otherwise but announcer dies currently in mid-air
+                // this happens because blizzard has 100-200ms delay before applying an aura
+                // so in retail announcer makes it on the ground before dying
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(39); // 2 seconds instead of 1.7 seconds
+                break;
+            case 67779: // The Black Knight - Desecration
+                // According to several videos the desecration players lose the desecration debuff in 12 seconds of cast
+                // There is an invisible stalker triggering every 2 seconds a desecration debuff
+                // so setting 10 second duration is correct
+                // besides the visual desecration on the ground disappears in 10 seconds of cast
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(1); // 10 seconds instead of 15 seconds
+                break;
+            case 67802: // The Black Knight - Desecration Arm
+                // in 3.3.5 there is only one radius in dbc which is 0 yards in this case
+                // use max radius from 4.3.4
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_7_YARDS);
+                break;
+            // ENDOF TRIAL OF THE CHAMPION SPELLS
+            //
             case 47476: // Deathknight - Strangulate
             case 15487: // Priest - Silence
             case 5211:  // Druid - Bash  - R1
@@ -3374,6 +3487,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 break;
             case 29726: // Test Ribbon Pole Channel
                 spellInfo->InterruptFlags &= ~AURA_INTERRUPT_FLAG_CAST;
+                break;
+            case 42767: // Sic'em
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_NEARBY_ENTRY);
                 break;
             // VIOLET HOLD SPELLS
             //
@@ -3425,6 +3541,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // may be db data bug, or blizz may keep reapplying area auras every update with checking immunity
                 // that will be clear if we get more spells with problem like this
                 spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                break;
+            case 62576: // Blizzard (Thorim)
+            case 62602:
+                // @workaround: looks like TARGET_DEST_CASTER in effect 0 overrides
+                // TARGET_DEST_CASTER_LEFT in effect 1, this aura needs to spawn 13 yds to the left of the caster
+                // without this was spawning at caster's pos.
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_CASTER_LEFT);
                 break;
             case 63414: // Spinning Up (Mimiron)
                 spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
@@ -3729,6 +3852,16 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 77846: // Twilight Cutter
                 spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS); // 100yd
                 break;
+			case 7328:  // Redemption
+			case 7329:  // Redemption
+			case 10322: // Redemption
+			case 10324: // Redemption
+			case 20772: // Redemption
+			case 20773: // Redemption
+			case 48949: // Redemption
+			case 48950: // Redemption
+				spellInfo->SpellFamilyName = SPELLFAMILY_PALADIN;
+				break;
             case 75509: // Twilight Mending
                 spellInfo->AttributesEx6 |= SPELL_ATTR6_CAN_TARGET_INVISIBLE;
                 spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
@@ -3744,6 +3877,11 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 75883:
             case 75876:
                 spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_6_YARDS);
+                break;
+            case 168:
+            case 7300:
+            case 7301:
+                spellInfo->AttributesEx |= SPELL_ATTR0_CASTABLE_WHILE_SITTING;
                 break;
             // ENDOF RUBY SANCTUM SPELLS
             //
@@ -3794,6 +3932,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 break;
             // ISLE OF CONQUEST SPELLS
             //
+			case 24259: // Spell Lock
+				spellInfo->Speed = 80.0f;
+				break;
             case 66551: // Teleport
                 spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13); // 50000yd
                 break;
@@ -3822,6 +3963,8 @@ void SpellMgr::LoadSpellInfoCorrections()
         properties->Type = SUMMON_TYPE_TOTEM;
     if (SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(647))) // 52893
         properties->Type = SUMMON_TYPE_TOTEM;
+    if (SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(628))) // Hungry Plaguehound
+        properties->Category = SUMMON_CATEGORY_PET;
 
     TC_LOG_INFO("server.loading", ">> Loaded SpellInfo corrections in %u ms", GetMSTimeDiffToNow(oldMSTime));
 }

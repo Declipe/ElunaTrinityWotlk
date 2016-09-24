@@ -73,6 +73,7 @@ TC_GAME_API uint32 GetDefaultMapLight(uint32 mapId);
 
 typedef std::unordered_multimap<uint32, SkillRaceClassInfoEntry const*> SkillRaceClassInfoMap;
 typedef std::pair<SkillRaceClassInfoMap::iterator, SkillRaceClassInfoMap::iterator> SkillRaceClassInfoBounds;
+
 TC_GAME_API SkillRaceClassInfoEntry const* GetSkillRaceClassInfo(uint32 skill, uint8 race, uint8 class_);
 
 TC_GAME_API ResponseCodes ValidateName(std::wstring const& name, LocaleConstant locale);
@@ -134,7 +135,7 @@ TC_GAME_API extern DBCStorage <GtRegenMPPerSptEntry>         sGtRegenMPPerSptSto
 TC_GAME_API extern DBCStorage <HolidaysEntry>                sHolidaysStore;
 TC_GAME_API extern DBCStorage <ItemEntry>                    sItemStore;
 TC_GAME_API extern DBCStorage <ItemBagFamilyEntry>           sItemBagFamilyStore;
-//TC_GAME_API extern DBCStorage <ItemDisplayInfoEntry>      sItemDisplayInfoStore; -- not used currently
+TC_GAME_API extern DBCStorage <ItemDisplayInfoEntry>         sItemDisplayInfoStore;
 TC_GAME_API extern DBCStorage <ItemExtendedCostEntry>        sItemExtendedCostStore;
 TC_GAME_API extern DBCStorage <ItemLimitCategoryEntry>       sItemLimitCategoryStore;
 TC_GAME_API extern DBCStorage <ItemRandomPropertiesEntry>    sItemRandomPropertiesStore;

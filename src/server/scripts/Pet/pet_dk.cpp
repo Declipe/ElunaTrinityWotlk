@@ -30,10 +30,28 @@
 
 enum DeathKnightSpells
 {
+    // Ebon Gargoyle
     SPELL_DK_SUMMON_GARGOYLE_1      = 49206,
     SPELL_DK_SUMMON_GARGOYLE_2      = 50514,
     SPELL_DK_DISMISS_GARGOYLE       = 50515,
-    SPELL_DK_SANCTUARY              = 54661
+    SPELL_DK_SANCTUARY              = 54661,
+
+    // Dancing Rune Weapon
+    SPELL_DK_DANCING_RUNE_WEAPON    = 49028,
+    SPELL_COPY_WEAPON = 63416,
+    SPELL_DK_RUNE_WEAPON_MARK = 50474,
+    SPELL_DK_DANCING_RUNE_WEAPON_VISUAL = 53160,
+    SPELL_FAKE_AGGRO_RADIUS_8_YARD = 49812,
+    SPELL_DK_RUNE_WEAPON_SCALING_01 = 51905,
+    SPELL_DK_RUNE_WEAPON_SCALING = 51906,
+    SPELL_PET_SCALING__MASTER_SPELL_06__SPELL_HIT_EXPERTISE_SPELL_PENETRATION = 67561,
+    SPELL_DK_PET_SCALING_03 = 61697,
+    SPELL_AGGRO_8_YD_PBAE = 49813,
+    // Main Spells
+    SPELL_BLOOD_STRIKE = 49926,
+    SPELL_PLAGUE_STRIKE = 49917,
+    
+    SPELL_DISMISS_RUNEBLADE = 50707 // Right now despawn is done by its duration
 };
 
 class npc_pet_dk_ebon_gargoyle : public CreatureScript
@@ -137,8 +155,128 @@ class npc_pet_dk_guardian : public CreatureScript
         }
 };
 
+enum DancingRuneWeapon
+{
+    DATA_INITIAL_TARGET_GUID = 1,
+
+    EVENT_SPELL_CAST_1 = 1,
+    EVENT_SPELL_CAST_2 = 2
+};
+
+class npc_pet_dk_rune_weapon : public CreatureScript
+{
+    public:
+        npc_pet_dk_rune_weapon() : CreatureScript("npc_pet_dk_rune_weapon") { }
+
+        struct npc_pet_dk_rune_weaponAI : ScriptedAI
+        {
+            npc_pet_dk_rune_weaponAI(Creature* creature) : ScriptedAI(creature)
+            {
+                Initialize();
+
+                // Prevent early victim engage
+                creature->SetReactState(REACT_DEFENSIVE);
+            }
+
+            void Initialize()
+            {
+                _events.Reset();
+            }
+
+            void IsSummonedBy(Unit* summoner) override
+            {
+                DoCast(summoner, SPELL_COPY_WEAPON, true);
+                DoCast(summoner, SPELL_DK_RUNE_WEAPON_MARK, true);
+                DoCast(me, SPELL_DK_DANCING_RUNE_WEAPON_VISUAL, true);
+                DoCast(me, SPELL_FAKE_AGGRO_RADIUS_8_YARD, true);
+                DoCast(me, SPELL_DK_RUNE_WEAPON_SCALING_01, true);
+                DoCast(me, SPELL_DK_RUNE_WEAPON_SCALING, true);
+                DoCast(me, SPELL_PET_SCALING__MASTER_SPELL_06__SPELL_HIT_EXPERTISE_SPELL_PENETRATION, true);
+                DoCast(me, SPELL_DK_PET_SCALING_03, true);
+
+                _events.ScheduleEvent(EVENT_SPELL_CAST_2, 6 * IN_MILLISECONDS);
+
+                me->SetRedirectThreat(summoner->GetGUID(), 100);
+            }
+
+            void MoveInLineOfSight(Unit* /*who*/) override { }
+            void AttackStart(Unit* /*who*/) override { }
+
+            void SetGUID(ObjectGuid guid, int32 type) override
+            {
+                switch (type)
+                {
+                    case DATA_INITIAL_TARGET_GUID:
+                        _targetGUID = guid;
+                        if (Unit* target = ObjectAccessor::GetUnit(*me, _targetGUID))
+                        {
+                            if (me->Attack(target, true))
+                                me->GetMotionMaster()->MoveChase(target);
+                            DoCast(target, SPELL_AGGRO_8_YD_PBAE, true);
+                            _events.ScheduleEvent(EVENT_SPELL_CAST_1, 1 * IN_MILLISECONDS);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            void OwnerMeleeDamageDealt(Unit* /*owner*/, CalcDamageInfo* damageInfo) override
+            {
+                if (Unit* target = ObjectAccessor::GetUnit(*me, _targetGUID))
+                {
+                    damageInfo->attacker = me;
+                    damageInfo->damage /= 2;
+                    me->DealDamage(target, damageInfo->damage, nullptr, DIRECT_DAMAGE, SpellSchoolMask(damageInfo->damageSchoolMask));
+                    me->SendAttackStateUpdate(damageInfo);
+                    me->ProcDamageAndSpell(damageInfo->target, damageInfo->procAttacker, damageInfo->procVictim, damageInfo->procEx, damageInfo->damage, damageInfo->attackType);
+                }
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                /*
+                    Investigate further if these casts are done by
+                    any owned aura, eitherway SMSG_SPELL_GO
+                    is sent every X seconds.
+                */
+                _events.Update(diff);
+
+                while (uint32 _eventId = _events.ExecuteEvent())
+                {
+                    switch (_eventId)
+                    {
+                        case EVENT_SPELL_CAST_1:
+                            // Cast every second
+                            if (Unit* victim = ObjectAccessor::GetUnit(*me, _targetGUID))
+                                DoCast(victim, SPELL_AGGRO_8_YD_PBAE, true);
+                            _events.ScheduleEvent(EVENT_SPELL_CAST_1, 1 * IN_MILLISECONDS);
+                            break;
+                        case EVENT_SPELL_CAST_2:
+                            // Cast every 6 seconds
+                            DoCast(me, SPELL_DK_DANCING_RUNE_WEAPON_VISUAL, true);
+                            _events.ScheduleEvent(EVENT_SPELL_CAST_2, 6 * IN_MILLISECONDS);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            private:
+                ObjectGuid _targetGUID;
+                EventMap _events;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_pet_dk_rune_weaponAI(creature);
+        }
+};
+
 void AddSC_deathknight_pet_scripts()
 {
     new npc_pet_dk_ebon_gargoyle();
+    new npc_pet_dk_rune_weapon();
     new npc_pet_dk_guardian();
 }

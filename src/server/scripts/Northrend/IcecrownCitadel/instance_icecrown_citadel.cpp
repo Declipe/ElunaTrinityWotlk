@@ -89,6 +89,7 @@ DoorData const doorData[] =
     {GO_DOODAD_ICECROWN_ROOSTPORTCULLIS_02,  DATA_VALITHRIA_DREAMWALKER, DOOR_TYPE_SPAWN_HOLE },
     {GO_DOODAD_ICECROWN_ROOSTPORTCULLIS_03,  DATA_VALITHRIA_DREAMWALKER, DOOR_TYPE_SPAWN_HOLE },
     {GO_DOODAD_ICECROWN_ROOSTPORTCULLIS_04,  DATA_VALITHRIA_DREAMWALKER, DOOR_TYPE_SPAWN_HOLE },
+    {GO_SINDRAGOSA_ENTRANCE_DOOR,            DATA_SINDRAGOSA_GAUNTLET,   DOOR_TYPE_PASSAGE    },
     {GO_SINDRAGOSA_ENTRANCE_DOOR,            DATA_SINDRAGOSA,            DOOR_TYPE_ROOM },
     {GO_SINDRAGOSA_SHORTCUT_ENTRANCE_DOOR,   DATA_SINDRAGOSA,            DOOR_TYPE_PASSAGE },
     {GO_SINDRAGOSA_SHORTCUT_EXIT_DOOR,       DATA_SINDRAGOSA,            DOOR_TYPE_PASSAGE },
@@ -147,6 +148,7 @@ class instance_icecrown_citadel : public InstanceMapScript
                 UpperSpireTeleporterActiveState = NOT_STARTED;
                 BloodQuickeningState = NOT_STARTED;
                 BloodQuickeningMinutes = 0;
+                SindragosasWardGUID  = ObjectGuid::Empty;
             }
 
             // A function to help reduce the number of lines for teleporter management.
@@ -335,6 +337,9 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case NPC_TERENAS_MENETHIL_FROSTMOURNE:
                     case NPC_TERENAS_MENETHIL_FROSTMOURNE_H:
                         TerenasMenethilGUID = creature->GetGUID();
+                        break;
+                    case NPC_SINDRAGOSAS_WARD:	
+                        SindragosasWardGUID = creature->GetGUID();	
                         break;
                     case NPC_WICKED_SPIRIT:
                         // Remove corpse as soon as it dies (and respawn 10 seconds later)
@@ -812,7 +817,9 @@ class instance_icecrown_citadel : public InstanceMapScript
                     case DATA_ARTHAS_PLATFORM:
                         return ArthasPlatformGUID;
                     case DATA_TERENAS_MENETHIL:
-                        return TerenasMenethilGUID;
+                        return TerenasMenethilGUID;	
+                    case DATA_SINDRAGOSA_GAUNTLET:	
+                        return SindragosasWardGUID;
                     default:
                         break;
                 }
@@ -1534,6 +1541,7 @@ class instance_icecrown_citadel : public InstanceMapScript
             bool IsOozeDanceEligible;
             bool IsNauseaEligible;
             bool IsOrbWhispererEligible;
+            ObjectGuid SindragosasWardGUID; //ObjectGuid
         };
 
         InstanceScript* GetInstanceScript(InstanceMap* map) const override

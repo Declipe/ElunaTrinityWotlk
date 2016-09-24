@@ -511,8 +511,8 @@ void Spell::EffectSchoolDMG(SpellEffIndex effIndex)
                             // Lookup for Deadly poison (only attacker applied)
                             if (AuraEffect const* aurEff = unitTarget->GetAuraEffect(SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_ROGUE, 0x00010000, 0, 0, m_caster->GetGUID()))
                             {
-                                // count consumed deadly poison doses at target
-                                bool needConsume = true;
+								// Glyph of Envenom
+								bool needConsume = !m_caster->HasAura(64199);
                                 uint32 spellId = aurEff->GetId();
 
                                 uint32 doses = aurEff->GetBase()->GetStackAmount();
@@ -4532,7 +4532,6 @@ void Spell::EffectLeap(SpellEffIndex /*effIndex*/)
         return;
 
     Position pos = destTarget->GetPosition();
-    pos = unitTarget->GetFirstCollisionPosition(unitTarget->GetDistance(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()), 0.0f);
     unitTarget->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), unitTarget == m_caster);
 }
 
@@ -4756,7 +4755,10 @@ void Spell::EffectLeapBack(SpellEffIndex effIndex)
     float speedxy = m_spellInfo->Effects[effIndex].MiscValue / 10.f;
     float speedz = damage/ 10.f;
     //1891: Disengage
-    m_caster->JumpTo(speedxy, speedz, m_spellInfo->SpellIconID != 1891);
+    //4022: Rolling Throw
+    m_caster->JumpTo(speedxy, speedz, (m_spellInfo->SpellIconID != 1891 && m_spellInfo->SpellIconID != 4022));
+    if (m_spellInfo->SpellIconID == 4022)
+        unitTarget->JumpTo(speedxy, speedz);
 }
 
 void Spell::EffectQuestClear(SpellEffIndex effIndex)

@@ -102,6 +102,7 @@ void AddSC_halls_of_stone();
 void AddSC_boss_auriaya();               //Ulduar Ulduar
 void AddSC_boss_flame_leviathan();
 void AddSC_boss_ignis();
+void AddSC_boss_thorim();
 void AddSC_boss_razorscale();
 void AddSC_boss_xt002();
 void AddSC_boss_kologarn();
@@ -289,6 +290,7 @@ void AddNorthrendScripts()
     AddSC_boss_assembly_of_iron();
     AddSC_boss_kologarn();
     AddSC_boss_mimiron();
+	AddSC_boss_thorim();
     AddSC_boss_hodir();
     AddSC_boss_freya();
     AddSC_boss_yogg_saron();

@@ -447,6 +447,19 @@ class TC_GAME_API CreatureScript : public UnitScript, public UpdatableScript<Cre
         virtual CreatureAI* GetAI(Creature* /*creature*/) const { return NULL; }
 };
 
+class TC_GAME_API AllCreatureScript : public ScriptObject
+{
+protected:
+
+	AllCreatureScript(const char* name);
+
+public:
+
+	// Called when die creature
+	   virtual void AllCreatureJustDied(Creature* /*creature*/) { }
+	   virtual void AllCreatureCreateLoot(Creature* /*creature*/, uint32& /*lootid*/) { }
+};
+
 class TC_GAME_API GameObjectScript : public ScriptObject, public UpdatableScript<GameObject>
 {
     protected:
@@ -739,6 +752,9 @@ class TC_GAME_API PlayerScript : public UnitScript
         // Called when a player is bound to an instance
         virtual void OnBindToInstance(Player* /*player*/, Difficulty /*difficulty*/, uint32 /*mapId*/, bool /*permanent*/, uint8 /*extendState*/) { }
 
+		// Called when a player skill update
+		virtual void OnPlayerSkillUpdate(Player* /*player*/, uint16 /*SkillId*/, uint16 /*SkillValue*/, uint16 /*SkillNewValue*/) { }
+
         // Called when a player switches to a new zone
         virtual void OnUpdateZone(Player* /*player*/, uint32 /*newZone*/, uint32 /*newArea*/) { }
 
@@ -979,6 +995,10 @@ class TC_GAME_API ScriptMgr
         bool CanSpawn(ObjectGuid::LowType spawnId, uint32 entry, CreatureTemplate const* actTemplate, CreatureData const* cData, Map const* map);
         CreatureAI* GetCreatureAI(Creature* creature);
         void OnCreatureUpdate(Creature* creature, uint32 diff);
+    public: /* AllCreatureScript */
+
+	    void AllCreatureJustDied(Creature* creature);
+	    void AllCreatureCreateLoot(Creature* creature, uint32& lootid);
 
     public: /* GameObjectScript */
 
@@ -1082,6 +1102,7 @@ class TC_GAME_API ScriptMgr
         void OnPlayerDelete(ObjectGuid guid, uint32 accountId);
         void OnPlayerFailedDelete(ObjectGuid guid, uint32 accountId);
         void OnPlayerSave(Player* player);
+	    void OnPlayerSkillUpdate(Player* player, uint16 SkillId, uint16 SkillValue, uint16 SkillNewValue);
         void OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapid, bool permanent, uint8 extendState);
         void OnPlayerUpdateZone(Player* player, uint32 newZone, uint32 newArea);
         void OnGossipSelect(Player* player, uint32 menu_id, uint32 sender, uint32 action);
