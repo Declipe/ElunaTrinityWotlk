@@ -384,7 +384,7 @@ void LoadNpcTele(void)
                         fields[12].GetString(),  // Cat Name Loc5
                         fields[13].GetString(), // Cat Name Loc6
                         fields[14].GetString(), // Cat Name Loc7
-                        fields[15].GetString()  // Cat Name Loc8
+                        fields[15].GetString(),  // Cat Name Loc8
                     }
                 };
 
@@ -406,7 +406,7 @@ void LoadNpcTele(void)
                     fields[24].GetString(),    // Dest Name_loc5
                     fields[25].GetString(),    // Dest Name_loc6
                     fields[26].GetString(),    // Dest Name_loc7
-                    fields[27].GetString()     // Dest Name_loc8
+                    fields[27].GetString(),     // Dest Name_loc8
                 },
                 fields[28].GetFloat(),      // X
                 fields[29].GetFloat(),      // Y
