@@ -456,11 +456,7 @@ class spell_ingvar_woe_strike : public SpellScriptLoader
 
             bool CheckProc(ProcEventInfo& eventInfo)
             {
-                HealInfo* healInfo = eventInfo.GetHealInfo();
-                if (!healInfo || !healInfo->GetHeal())
-                    return false;
-
-                return true;
+                return eventInfo.GetHealInfo()->GetHeal() != 0;
             }
 
             void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)

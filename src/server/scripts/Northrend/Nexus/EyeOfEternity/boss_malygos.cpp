@@ -2037,7 +2037,11 @@ class spell_scion_of_eternity_arcane_barrage : public SpellScriptLoader
             void TriggerDamageSpellFromPlayer()
             {
                 if (Player* hitTarget = GetHitPlayer())
-                    hitTarget->CastSpell(hitTarget, SPELL_ARCANE_BARRAGE_DAMAGE, true, nullptr, nullptr, GetCaster()->GetGUID());
+                {
+                    // There is some proc in this spell I have absolutely no idea of use, but just in case...
+                    TriggerCastFlags triggerFlags = TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_DISALLOW_PROC_EVENTS);
+                    hitTarget->CastSpell(hitTarget, SPELL_ARCANE_BARRAGE_DAMAGE, triggerFlags, NULL, NULL, GetCaster()->GetGUID());
+                }
             }
 
             void Register() override

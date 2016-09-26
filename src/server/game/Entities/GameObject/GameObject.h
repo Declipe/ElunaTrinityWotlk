@@ -812,7 +812,7 @@ class TC_GAME_API GameObject : public WorldObject, public GridObject<GameObject>
 
         Player* GetLootRecipient() const;
         Group* GetLootRecipientGroup() const;
-        void SetLootRecipient(Unit* unit, Group* group = nullptr);
+        void SetLootRecipient(Unit* unit);
         bool IsLootAllowedFor(Player const* player) const;
         bool HasLootRecipient() const { return !m_lootRecipient.IsEmpty() || m_lootRecipientGroup; }
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot

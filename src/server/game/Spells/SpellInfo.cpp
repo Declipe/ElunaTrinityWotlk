@@ -519,7 +519,7 @@ float SpellEffectInfo::CalcValueMultiplier(Unit* caster, Spell* spell) const
 {
     float multiplier = ValueMultiplier;
     if (Player* modOwner = (caster ? caster->GetSpellModOwner() : NULL))
-        modOwner->ApplySpellMod<SPELLMOD_VALUE_MULTIPLIER>(_spellInfo->Id, multiplier, spell);
+        modOwner->ApplySpellMod(_spellInfo->Id, SPELLMOD_VALUE_MULTIPLIER, multiplier, spell);
     return multiplier;
 }
 
@@ -527,7 +527,7 @@ float SpellEffectInfo::CalcDamageMultiplier(Unit* caster, Spell* spell) const
 {
     float multiplierPercent = DamageMultiplier * 100.0f;
     if (Player* modOwner = (caster ? caster->GetSpellModOwner() : NULL))
-        modOwner->ApplySpellMod<SPELLMOD_DAMAGE_MULTIPLIER>(_spellInfo->Id, multiplierPercent, spell);
+        modOwner->ApplySpellMod(_spellInfo->Id, SPELLMOD_DAMAGE_MULTIPLIER, multiplierPercent, spell);
     return multiplierPercent / 100.0f;
 }
 
@@ -547,7 +547,7 @@ float SpellEffectInfo::CalcRadius(Unit* caster, Spell* spell) const
         radius += RadiusEntry->RadiusPerLevel * caster->getLevel();
         radius = std::min(radius, RadiusEntry->RadiusMax);
         if (Player* modOwner = caster->GetSpellModOwner())
-            modOwner->ApplySpellMod<SPELLMOD_RADIUS>(_spellInfo->Id, radius, spell);
+            modOwner->ApplySpellMod(_spellInfo->Id, SPELLMOD_RADIUS, radius, spell);
     }
 
     return radius;
@@ -2111,7 +2111,7 @@ float SpellInfo::GetMaxRange(bool positive, Unit* caster, Spell* spell) const
         range = RangeEntry->maxRangeHostile;
     if (caster)
         if (Player* modOwner = caster->GetSpellModOwner())
-            modOwner->ApplySpellMod<SPELLMOD_RANGE>(Id, range, spell);
+            modOwner->ApplySpellMod(Id, SPELLMOD_RANGE, range, spell);
     return range;
 }
 
@@ -2257,7 +2257,7 @@ int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) c
 
     // Apply cost mod by spell
     if (Player* modOwner = caster->GetSpellModOwner())
-        modOwner->ApplySpellMod<SPELLMOD_COST>(Id, powerCost);
+        modOwner->ApplySpellMod(Id, SPELLMOD_COST, powerCost);
 
     if (!caster->IsControlledByPlayer())
     {
@@ -2436,7 +2436,7 @@ bool SpellInfo::_IsPositiveEffect(uint8 effIndex, bool deep) const
             // Amplify Magic, Dampen Magic
             if (SpellFamilyFlags[0] == 0x00002000)
                 return true;
-            // Impact
+            // Ignite
             if (SpellIconID == 45)
                 return true;
             break;
