@@ -1019,6 +1019,15 @@ Quests.IgnoreAutoAccept = 0
 Quests.IgnoreAutoComplete = 0
 
 #
+#    Quests.DailyResetTime
+#        Description: Hour of the day when daily quest reset occurs.
+#        Range:       0-23
+#        Default:     3 - (3:00 AM, Blizzlike)
+#
+
+Quests.DailyResetTime = 3
+
+#
 #    Guild.EventLogRecordsCount
 #        Description: Number of log entries for guild events that are stored per guild. Old entries
 #                     will be overwritten if the number of log entries exceed the configured value.
@@ -1739,10 +1748,10 @@ Creature.MovingStopTimeForPlayer = 180000
 #        Description: Chat protection from creating fake messages using a lot spaces or other
 #                     invisible symbols. Not applied to the addon language, but may break old
 #                     addons that use normal languages for sending data to other clients.
-#        Default:     0 - (Disabled)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled, Blizzlike)
+#                     0 - (Disabled)
 
-ChatFakeMessagePreventing = 0
+ChatFakeMessagePreventing = 1
 
 #
 #    ChatStrictLinkChecking.Severity
@@ -4326,12 +4335,14 @@ Guildhouse.SellCost = 500
  PlayedTimeReward.Money    = 0
  PlayedTimeReward.Honor    = 0
  PlayedTimeReward.Arena    = 0
- disablesall               = true
- disablesit1               = true
- disablesit2               = true
- disablesit3               = true
- disablesit4               = true
- disablesit5               = true
+ #        Default:     0 - (Disabled)
+ #                     1 - (Enabled)
+ disablesall               = 0
+ disablesit1               = 1
+ disablesit2               = 1
+ disablesit3               = 1
+ disablesit4               = 1
+ disablesit5               = 1
  PlayedTimeReward.item1id  = 0
  PlayedTimeReward.item2id  = 0
  PlayedTimeReward.item3id  = 0

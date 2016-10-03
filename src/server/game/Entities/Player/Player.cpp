@@ -432,6 +432,7 @@ Player::Player(WorldSession* session): Unit(true)
     m_canParry = false;
     m_canBlock = false;
     m_canTitanGrip = false;
+    m_titanGripPenaltySpellId = 0;
     m_ammoDPS = 0.0f;
 
     m_temporaryUnsummonedPetNumber = 0;
@@ -1319,25 +1320,25 @@ void Player::Update(uint32 p_time)
             ModifyMoney(ptr_Money);
             ModifyHonorPoints(ptr_Honor);
             ModifyArenaPoints(ptr_Arena);
-        if (sConfigMgr->GetBoolDefault("disablesall", false))
+        if (sConfigMgr->GetIntDefault("disablesall", 0))
          {
-			 if (sConfigMgr->GetBoolDefault("disablesit1", false))
+			 if (sConfigMgr->GetIntDefault("disablesit1", 0))
 			 {
 			AddItem(ptr_item1id, ptr_item1);
 			 }
-			if (sConfigMgr->GetBoolDefault("disablesit2", false))
+			if (sConfigMgr->GetIntDefault("disablesit2", 0))
 			{
 			AddItem(ptr_item2id, ptr_item2);
 			}
-			if (sConfigMgr->GetBoolDefault("disablesit3", false))
+			if (sConfigMgr->GetIntDefault("disablesit3", 0))
 			{
 			AddItem(ptr_item3id, ptr_item3);
 			}
-			if (sConfigMgr->GetBoolDefault("disablesit4", false))
+			if (sConfigMgr->GetIntDefault("disablesit4", 0))
 			{
 			AddItem(ptr_item4id, ptr_item4);
 			}
-			if (sConfigMgr->GetBoolDefault("disablesit5", false))
+			if (sConfigMgr->GetIntDefault("disablesit5", 0))
 			{
 			AddItem(ptr_item5id, ptr_item5);
 			}
@@ -1560,6 +1561,7 @@ void Player::Update(uint32 p_time)
         uint32 elapsed = uint32(now - m_Last_tick);
         m_Played_time[PLAYED_TIME_TOTAL] += elapsed;        // Total played time
         m_Played_time[PLAYED_TIME_LEVEL] += elapsed;        // Level played time
+        sScriptMgr->OnPlayerTime(this, m_Played_time[PLAYED_TIME_TOTAL], m_Played_time[PLAYED_TIME_LEVEL]);
         m_Last_tick = now;
     }
 
@@ -3911,7 +3913,11 @@ void Player::RemoveSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
     }
 
     if (spell_id == 46917 && m_canTitanGrip)
+    {
+        RemoveAurasDueToSpell(m_titanGripPenaltySpellId);
         SetCanTitanGrip(false);
+    }
+
     if (spell_id == 674 && m_canDualWield)
         SetCanDualWield(false);
 
@@ -12215,6 +12221,9 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         return pItem2;
     }
 
+    if (slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND)
+        CheckTitanGripPenalty();
+
     // only for full equip instead adding to stack
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
@@ -12240,6 +12249,9 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
             pItem->AddToWorld();
             pItem->SendUpdateToPlayer(this);
         }
+
+        if (slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND)
+            CheckTitanGripPenalty();
 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
@@ -12370,7 +12382,11 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
             SetGuidValue(PLAYER_FIELD_INV_SLOT_HEAD + (slot * 2), ObjectGuid::Empty);
 
             if (slot < EQUIPMENT_SLOT_END)
+            {
                 SetVisibleItemSlot(slot, nullptr);
+                if (slot == EQUIPMENT_SLOT_MAINHAND || slot == EQUIPMENT_SLOT_OFFHAND)
+                    CheckTitanGripPenalty();
+            }
         }
         else if (Bag* pBag = GetBagByPos(bag))
             pBag->RemoveItem(slot, update);
@@ -13454,10 +13470,50 @@ bool Player::IsUseEquipedWeapon(bool mainhand) const
     return !IsInFeralForm() && (!mainhand || !HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISARMED));
 }
 
+void Player::SetCanTitanGrip(bool value, uint32 penaltySpellId /*= 0*/)
+{
+    if (value == m_canTitanGrip)
+        return;
+
+    m_canTitanGrip = value;
+    m_titanGripPenaltySpellId = penaltySpellId;
+}
+
+void Player::CheckTitanGripPenalty()
+{
+    if (!CanTitanGrip())
+        return;
+
+    bool apply = IsUsingTwoHandedWeaponInOneHand();
+    if (apply)
+    {
+        if (!HasAura(m_titanGripPenaltySpellId))
+            CastSpell((Unit*)nullptr, m_titanGripPenaltySpellId, true);
+    }
+    else
+        RemoveAurasDueToSpell(m_titanGripPenaltySpellId);
+}
+
 bool Player::IsTwoHandUsed() const
 {
     Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
     return mainItem && mainItem->GetTemplate()->InventoryType == INVTYPE_2HWEAPON && !CanTitanGrip();
+}
+
+bool Player::IsUsingTwoHandedWeaponInOneHand() const
+{
+    Item* offItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+    if (offItem && offItem->GetTemplate()->InventoryType == INVTYPE_2HWEAPON)
+        return true;
+
+    Item* mainItem = GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+    if (!mainItem || mainItem->GetTemplate()->InventoryType != INVTYPE_2HWEAPON)
+        return false;
+
+    if (!offItem)
+        return false;
+
+    return true;
 }
 
 void Player::TradeCancel(bool sendback)
@@ -15213,10 +15269,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     RemoveActiveQuest(quest_id, false);
     if (quest->CanIncreaseRewardedQuestCounters())
-    {
-        m_RewardedQuests.insert(quest_id);
-        m_RewardedQuestsSave[quest_id] = QUEST_DEFAULT_SAVE_TYPE;
-    }
+        SetRewardedQuest(quest_id);
 
     // StoreNewItem, mail reward, etc. save data directly to the database
     // to prevent exploitable data desynchronisation we save the quest status to the database too
@@ -15270,6 +15323,12 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     SetCanDelayTeleport(false);
 
     sScriptMgr->OnQuestStatusChange(this, quest_id);
+}
+
+void Player::SetRewardedQuest(uint32 quest_id)
+{
+    m_RewardedQuests.insert(quest_id);
+    m_RewardedQuestsSave[quest_id] = QUEST_DEFAULT_SAVE_TYPE;
 }
 
 void Player::FailQuest(uint32 questId)
@@ -21236,7 +21295,7 @@ void Player::SetRestBonus(float rest_bonus_new)
     SetUInt32Value(PLAYER_REST_STATE_EXPERIENCE, uint32(m_rest_bonus));
 }
 
-bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc /*= NULL*/, uint32 spellid /*= 0*/)
+bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc /*= nullptr*/, uint32 spellid /*= 0*/)
 {
     if (nodes.size() < 2)
         return false;
@@ -21306,11 +21365,7 @@ bool Player::ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc 
     // check node starting pos data set case if provided
     if (node->x != 0.0f || node->y != 0.0f || node->z != 0.0f)
     {
-        if (node->map_id != GetMapId() ||
-            (node->x - GetPositionX())*(node->x - GetPositionX())+
-            (node->y - GetPositionY())*(node->y - GetPositionY())+
-            (node->z - GetPositionZ())*(node->z - GetPositionZ()) >
-            (2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE)*(2*INTERACTION_DISTANCE))
+        if (node->map_id != GetMapId() || !IsInDist(node->x, node->y, node->z, 2 * INTERACTION_DISTANCE))
         {
             GetSession()->SendActivateTaxiReply(ERR_TAXITOOFARAWAY);
             return false;
@@ -21471,10 +21526,7 @@ void Player::ContinueTaxiFlight() const
     TaxiPathNodeList const& nodeList = sTaxiPathNodesByPath[path];
 
     float distPrev;
-    float distNext =
-        (nodeList[0]->LocX - GetPositionX())*(nodeList[0]->LocX - GetPositionX()) +
-        (nodeList[0]->LocY - GetPositionY())*(nodeList[0]->LocY - GetPositionY()) +
-        (nodeList[0]->LocZ - GetPositionZ())*(nodeList[0]->LocZ - GetPositionZ());
+    float distNext = GetExactDistSq(nodeList[0]->LocX, nodeList[0]->LocY, nodeList[0]->LocZ);
 
     for (uint32 i = 1; i < nodeList.size(); ++i)
     {
@@ -21487,10 +21539,7 @@ void Player::ContinueTaxiFlight() const
 
         distPrev = distNext;
 
-        distNext =
-            (node->LocX - GetPositionX())*(node->LocX - GetPositionX()) +
-            (node->LocY - GetPositionY())*(node->LocY - GetPositionY()) +
-            (node->LocZ - GetPositionZ())*(node->LocZ - GetPositionZ());
+        distNext = GetExactDistSq(node->LocX, node->LocY, node->LocZ);
 
         float distNodes =
             (node->LocX - prevNode->LocX)*(node->LocX - prevNode->LocX) +

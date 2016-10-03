@@ -165,8 +165,8 @@ public:
 #define MSG_GOSSIP_TEXT_BUFF_STAMINA "[Бафнуть] Выносливость"
 
 #define MSG_GOSSIP_TEXT_BUFF_MENU "[Меню бафов] ->"
-#define MSG_GOSSIP_TEXT_BUFF_MENUvip1 "[Меню бафов1] ->"
-#define MSG_GOSSIP_TEXT_BUFF_MENUvip2 "[Меню бафов2] ->"
+#define MSG_GOSSIP_TEXT_BUFF_MENUvip1 "[Premium buff] ->"
+#define MSG_GOSSIP_TEXT_BUFF_MENUvip2 "[Archiv] ->"
 #define MSG_GOSSIP_TEXT_MAIN_MENU "<- [Вернутся в Главное меню]"
 #define MSG_GOSSIP_TEXT_PROFFESION_MENU "[Меню Профессий] ->"
 #define MSG_GOSSIP_TEXT_PROFFESION_SECON_MENU "[Меню Второстепенных профессий] ->"

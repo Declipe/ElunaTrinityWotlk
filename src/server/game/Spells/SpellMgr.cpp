@@ -1496,29 +1496,38 @@ void SpellMgr::LoadSpellLearnSkills()
 
     // search auto-learned skills and add its to map also for use in unlearn spells/talents
     uint32 dbc_count = 0;
-    for (uint32 spell = 0; spell < GetSpellInfoStoreSize(); ++spell)
+    for (SpellInfo const* entry : mSpellInfoMap)
     {
-        SpellInfo const* entry = GetSpellInfo(spell);
-
         if (!entry)
             continue;
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if (entry->Effects[i].Effect == SPELL_EFFECT_SKILL)
+            SpellLearnSkillNode dbc_node;
+            switch (entry->Effects[i].Effect)
             {
-                SpellLearnSkillNode dbc_node;
-                dbc_node.skill = entry->Effects[i].MiscValue;
-                dbc_node.step  = entry->Effects[i].CalcValue();
-                if (dbc_node.skill != SKILL_RIDING)
+                case SPELL_EFFECT_SKILL:
+                    dbc_node.skill = entry->Effects[i].MiscValue;
+                    dbc_node.step = entry->Effects[i].CalcValue();
+                    if (dbc_node.skill != SKILL_RIDING)
+                        dbc_node.value = 1;
+                    else
+                        dbc_node.value = dbc_node.step * 75;
+                    dbc_node.maxvalue = dbc_node.step * 75;
+                    break;
+                case SPELL_EFFECT_DUAL_WIELD:
+                    dbc_node.skill = SKILL_DUAL_WIELD;
+                    dbc_node.step = 1;
                     dbc_node.value = 1;
-                else
-                    dbc_node.value = dbc_node.step * 75;
-                dbc_node.maxvalue = dbc_node.step * 75;
-                mSpellLearnSkills[spell] = dbc_node;
-                ++dbc_count;
-                break;
+                    dbc_node.maxvalue = 1;
+                    break;
+                default:
+                    continue;
             }
+
+            mSpellLearnSkills[entry->Id] = dbc_node;
+            ++dbc_count;
+            break;
         }
     }
 
@@ -2965,12 +2974,6 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 63137: // Force Cast (HACK: Target shouldn't be changed; summon position should be untied from spell destination)
                 spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_DB);
                 break;
-            case 53096: // Quetz'lun's Judgment
-            case 70743: // AoD Special
-            case 70614: // AoD Special - Vegard
-            case 4020: // Safirdrang's Chill
-                spellInfo->MaxAffectedTargets = 1;
-                break;
             case 42436: // Drink! (Brewfest)
                 spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
                 break;
@@ -3089,6 +3092,14 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 36327: // Shoot Arcane Explosion Arrow
             case 55479: // Force Obedience
             case 28560: // Summon Blizzard (Sapphiron)
+            case 53096: // Quetz'lun's Judgment
+            case 70743: // AoD Special
+            case 70614: // AoD Special - Vegard
+            case 4020: // Safirdrang's Chill
+            case 52438: // Summon Skittering Swarmer (Force Cast)
+            case 52449: // Summon Skittering Infector (Force Cast)
+            case 53609: // Summon Anub'ar Assassin (Force Cast)
+            case 53457: // Summon Impale Trigger (AoE)
                 spellInfo->MaxAffectedTargets = 1;
                 break;
             case 36384: // Skartax Purple Beam

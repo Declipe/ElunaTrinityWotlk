@@ -10,6 +10,7 @@ Compatible with Transmogrification 6.1 by Rochet2
 http://rochet2.github.io/Transmogrification
 */
 
+//#include "Transmogrification.h"
 #include "TransmogDisplayVendorConf.h"
 #include "Common.h"
 #include "QueryResult.h"
@@ -116,26 +117,26 @@ void TransmogDisplayVendorMgr::UpdateItem(Player* player, Item* item)
             item->SendUpdateToPlayer(player);
     }
 }
-const char* TransmogDisplayVendorMgr::getSlotName(uint8 slot, WorldSession* /*session*/)
+const char* TransmogDisplayVendorMgr::getSlotName(uint8 slot, WorldSession* session)
 {
     TC_LOG_DEBUG("custom.transmog", "TransmogDisplayVendorMgr::TransmogDisplayVendorMgr::getSlotName");
 
     switch (slot)
     {
-        case EQUIPMENT_SLOT_HEAD: return  "Head";// session->GetTrinityString(LANG_SLOT_NAME_HEAD);
-        case EQUIPMENT_SLOT_SHOULDERS: return  "Shoulders";// session->GetTrinityString(LANG_SLOT_NAME_SHOULDERS);
-        case EQUIPMENT_SLOT_BODY: return  "Shirt";// session->GetTrinityString(LANG_SLOT_NAME_BODY);
-        case EQUIPMENT_SLOT_CHEST: return  "Chest";// session->GetTrinityString(LANG_SLOT_NAME_CHEST);
-        case EQUIPMENT_SLOT_WAIST: return  "Waist";// session->GetTrinityString(LANG_SLOT_NAME_WAIST);
-        case EQUIPMENT_SLOT_LEGS: return  "Legs";// session->GetTrinityString(LANG_SLOT_NAME_LEGS);
-        case EQUIPMENT_SLOT_FEET: return  "Feet";// session->GetTrinityString(LANG_SLOT_NAME_FEET);
-        case EQUIPMENT_SLOT_WRISTS: return  "Wrists";// session->GetTrinityString(LANG_SLOT_NAME_WRISTS);
-        case EQUIPMENT_SLOT_HANDS: return  "Hands";// session->GetTrinityString(LANG_SLOT_NAME_HANDS);
-        case EQUIPMENT_SLOT_BACK: return  "Back";// session->GetTrinityString(LANG_SLOT_NAME_BACK);
-        case EQUIPMENT_SLOT_MAINHAND: return  "Main hand";// session->GetTrinityString(LANG_SLOT_NAME_MAINHAND);
-        case EQUIPMENT_SLOT_OFFHAND: return  "Off hand";// session->GetTrinityString(LANG_SLOT_NAME_OFFHAND);
-        case EQUIPMENT_SLOT_RANGED: return  "Ranged";// session->GetTrinityString(LANG_SLOT_NAME_RANGED);
-        case EQUIPMENT_SLOT_TABARD: return  "Tabard";// session->GetTrinityString(LANG_SLOT_NAME_TABARD);
+        case EQUIPMENT_SLOT_HEAD: return session->GetTrinityString(LANG_SLOT_NAME_HEAD1);
+        case EQUIPMENT_SLOT_SHOULDERS: return session->GetTrinityString(LANG_SLOT_NAME_SHOULDERS1);
+        case EQUIPMENT_SLOT_BODY: return session->GetTrinityString(LANG_SLOT_NAME_BODY1);
+        case EQUIPMENT_SLOT_CHEST: return session->GetTrinityString(LANG_SLOT_NAME_CHEST1);
+        case EQUIPMENT_SLOT_WAIST: return session->GetTrinityString(LANG_SLOT_NAME_WAIST1);
+        case EQUIPMENT_SLOT_LEGS: return session->GetTrinityString(LANG_SLOT_NAME_LEGS1);
+        case EQUIPMENT_SLOT_FEET: return session->GetTrinityString(LANG_SLOT_NAME_FEET1);
+        case EQUIPMENT_SLOT_WRISTS: return session->GetTrinityString(LANG_SLOT_NAME_WRISTS1);
+        case EQUIPMENT_SLOT_HANDS: return session->GetTrinityString(LANG_SLOT_NAME_HANDS1);
+        case EQUIPMENT_SLOT_BACK: return session->GetTrinityString(LANG_SLOT_NAME_BACK1);
+        case EQUIPMENT_SLOT_MAINHAND: return session->GetTrinityString(LANG_SLOT_NAME_MAINHAND1);
+        case EQUIPMENT_SLOT_OFFHAND: return session->GetTrinityString(LANG_SLOT_NAME_OFFHAND1);
+        case EQUIPMENT_SLOT_RANGED: return session->GetTrinityString(LANG_SLOT_NAME_RANGED1);
+        case EQUIPMENT_SLOT_TABARD: return session->GetTrinityString(LANG_SLOT_NAME_TABARD1);
         default: return NULL;
     }
 }

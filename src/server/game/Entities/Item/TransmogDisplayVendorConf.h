@@ -43,6 +43,24 @@ enum TransmogDisplayVendorSenders
     SENDER_END,
 };
 
+enum TransmogTrinityStrings1 // Language.h might have same entries, appears when executing SQL, change if needed
+{
+    LANG_SLOT_NAME_HEAD1 = 111231,
+    LANG_SLOT_NAME_SHOULDERS1 = 111241,
+    LANG_SLOT_NAME_BODY1 = 111251,
+    LANG_SLOT_NAME_CHEST1 = 111261,
+    LANG_SLOT_NAME_WAIST1 = 111271,
+    LANG_SLOT_NAME_LEGS1 = 111281,
+    LANG_SLOT_NAME_FEET1 = 111291,
+    LANG_SLOT_NAME_WRISTS1 = 111301,
+    LANG_SLOT_NAME_HANDS1 = 111311,
+    LANG_SLOT_NAME_BACK1 = 111321,
+    LANG_SLOT_NAME_MAINHAND1 = 111331,
+    LANG_SLOT_NAME_OFFHAND1 = 111341,
+    LANG_SLOT_NAME_RANGED1 = 111351,
+    LANG_SLOT_NAME_TABARD1 = 111361,
+};
+
 namespace
 {
     class RWLockable
